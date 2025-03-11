@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="correct-xmldb-format.xslt"?>
+<xmldb>
+    <table name="local_recibeExamen_exams" comment="Almacena los exámenes recibidos de DocuWare">
+        <field name="id" type="int" length="10" unsigned="true" notnull="true" sequence="true" comment="Clave primaria"/>
+        <field name="userid" type="int" length="10" unsigned="true" notnull="true" comment="ID del usuario"/>
+        <field name="courseid" type="int" length="10" unsigned="true" notnull="true" comment="ID del curso"/>
+        <field name="examdata" type="text" notnull="true" comment="Datos del examen"/>
+        <field name="timecreated" type="int" length="10" unsigned="true" notnull="true" comment="Fecha de creación"/>
+        <field name="timemodified" type="int" length="10" unsigned="true" notnull="true" comment="Fecha de última modificación"/>
+        
+        <key name="primary" type="primary" fields="id"/>
+        <key name="userid_idx" type="index" fields="userid"/>
+        <key name="courseid_idx" type="index" fields="courseid"/>
+    </table>
+</xmldb>
