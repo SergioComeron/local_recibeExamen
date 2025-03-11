@@ -1,4 +1,4 @@
-# Local RecibeExamen
+# Local recibeexamen
 
 Este es un plugin local para Moodle que permite recibir exámenes de manera eficiente.
 
@@ -10,7 +10,7 @@ Este es un plugin local para Moodle que permite recibir exámenes de manera efic
 ## Instalación
 
 1. Descargue el plugin desde el repositorio.
-2. Extraiga el contenido en el directorio `local/local_recibeExamen` dentro de su instalación de Moodle.
+2. Extraiga el contenido en el directorio `local/local_recibeexamen` dentro de su instalación de Moodle.
 3. Vaya a la página de administración de su sitio Moodle para completar la instalación.
 
 ## Uso

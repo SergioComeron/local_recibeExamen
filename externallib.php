@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the local_recibeExamen plugin.
+ * Version metadata for the local_recibeexamen plugin.
  *
- * @package   local_recibeExamen
+ * @package   local_recibeexamen
  * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/externallib.php");
 
-class local_recibeExamen_external extends external_api {
+class local_recibeexamen_external extends external_api {
 
     /**
      * Define los parámetros que recibe la función.
@@ -63,7 +63,7 @@ class local_recibeExamen_external extends external_api {
 
         // Verificar que el usuario exista.
         if (!$user = $DB->get_record('user', array('username' => $params['username']))) {
-            throw new moodle_exception('errorusernotfound', 'local_recibeExamen');
+            throw new moodle_exception('errorusernotfound', 'local_recibeexamen');
         }
 
         // Construir el nombre corto del curso.
@@ -71,7 +71,7 @@ class local_recibeExamen_external extends external_api {
 
         // Verificar que el curso exista.
         if (!$course = $DB->get_record('course', array('shortname' => $courseshortname))) {
-            throw new moodle_exception('errorcoursenotfound', 'local_recibeExamen');
+            throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
         }
 
         // Aquí podrías implementar la lógica para registrar el examen.
@@ -84,7 +84,7 @@ class local_recibeExamen_external extends external_api {
         $record->timemodified= time();
 
         // Asegúrate de haber creado previamente la tabla local_docuwarews_exams en tu plugin.
-        $insertid = $DB->insert_record('local_recibeExamen_exams', $record);
+        $insertid = $DB->insert_record('recibeexamen_exams', $record);
 
         return array('status' => 'success', 'examid' => $insertid);
     }

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin functions for the local_recibeExamen plugin.
+ * Plugin functions for the local_recibeexamen plugin.
  *
- * @package   local_recibeExamen
+ * @package   local_recibeexamen
  * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

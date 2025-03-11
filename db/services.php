@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the local_recibeExamen plugin.
+ * Version metadata for the local_recibeexamen plugin.
  *
- * @package   local_recibeExamen
+ * @package   local_recibeexamen
  * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,10 +25,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = array(
-    'local_recibeExamen_receive_exam' => array(
-         'classname'   => 'local_recibeExamen_external',
+    'local_recibeexamen_receive_exam' => array(
+         'classname'   => 'local_recibeexamen_external',
          'methodname'  => 'receive_exam',
-         'classpath'   => 'local/recibeExamen/externallib.php',
+         'classpath'   => 'local/recibeexamen/externallib.php',
          'description' => 'Recibe un examen y lo registra en el curso indicado',
          'type'        => 'write',
          'ajax'        => true,
@@ -37,7 +37,7 @@ $functions = array(
 
 $services = array(
     'DocuWare Web Service' => array(
-         'functions' => array ('local_recibeExamen_receive_exam'),
+         'functions' => array ('local_recibeexamen_receive_exam'),
          'restrictedusers' => 1,
          'enabled'=>1,
     )

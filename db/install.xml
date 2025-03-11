@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="correct-xmldb-format.xslt"?>
-<xmldb>
-    <table name="local_recibeExamen_exams" comment="Almacena los exámenes recibidos de DocuWare">
+<XMLDB PATH="local/recibeexamen/db" VERSION="20101203" COMMENT="XMLDB file for Moodle mod/jitsi"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+><TABLES>
+    <table name="recibeexamen_exams" comment="Almacena los exámenes recibidos de DocuWare">
         <field name="id" type="int" length="10" unsigned="true" notnull="true" sequence="true" comment="Clave primaria"/>
         <field name="userid" type="int" length="10" unsigned="true" notnull="true" comment="ID del usuario"/>
         <field name="courseid" type="int" length="10" unsigned="true" notnull="true" comment="ID del curso"/>
@@ -13,4 +15,5 @@
         <key name="userid_idx" type="index" fields="userid"/>
         <key name="courseid_idx" type="index" fields="courseid"/>
     </table>
+</TABLES>
 </xmldb>

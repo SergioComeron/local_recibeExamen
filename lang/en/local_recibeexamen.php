@@ -15,12 +15,16 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the local_recibeExamen plugin.
+ * Version metadata for the local_recibeexamen plugin.
  *
- * @package   local_recibeExamen
+ * @package   local_recibeexamen
  * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['pluginname'] = 'Recibe Examen';
+$string['recibeexamen'] = 'Recibe Examen';
+$string['recibeexamen:addinstance'] = 'Add a new Recibe Examen block';
+$string['recibeexamen:myaddinstance'] = 'Add a new Recibe Examen block to My Moodle page';
