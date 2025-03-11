@@ -26,6 +26,9 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/externallib.php");
 
+/**
+ * Clase que implementa la función local_recibeexamen_receive_exam.
+ */
 class local_recibeexamen_external extends external_api {
 
     /**
@@ -35,13 +38,12 @@ class local_recibeexamen_external extends external_api {
      */
     public static function receive_exam_parameters() {
         return new external_function_parameters(
-            array(
-                'idusuldap' => new external_value(PARAM_RAW, 'Nombre de usuario del estudiante'),
-                'asscodnum' => new external_value(PARAM_INT, 'ID del curso'),
-                'vaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
-                'gaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
-                'anyanyaca' => new external_value(PARAM_RAW, 'Datos del examen')
-            )
+            ['idusuldap' => new external_value(PARAM_RAW, 'Nombre de usuario del estudiante'),
+             'asscodnum' => new external_value(PARAM_INT, 'ID del curso'),
+             'vaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
+             'gaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
+             'anyanyaca' => new external_value(PARAM_RAW, 'Datos del examen'),
+            ]
         );
     }
 
@@ -59,34 +61,35 @@ class local_recibeexamen_external extends external_api {
 
         // Validar parámetros.
         $params = self::validate_parameters(self::receive_exam_parameters(),
-            array('idusuldap' => $idusuldap, 'asscodnum' => $asscodnum, 'vaccodnum' => $vaccodnum, 'gaccodnum' => $gaccodnum, 'anyanyaca' => $anyanyaca));
+            ['idusuldap' => $idusuldap, 'asscodnum' => $asscodnum, 'vaccodnum' => $vaccodnum,
+                'gaccodnum' => $gaccodnum, 'anyanyaca' => $anyanyaca]);
 
         // Verificar que el usuario exista.
-        if (!$user = $DB->get_record('user', array('username' => $params['username']))) {
+        if (!$user = $DB->get_record('user', ['username' => $params['username']])) {
             throw new moodle_exception('errorusernotfound', 'local_recibeexamen');
         }
 
         // Construir el nombre corto del curso.
-        $courseshortname = $params['anyanyaca'] . '_' . $params['asscodnum'] . '_' . $params['vaccodnum'] . '_' . $params['gaccodnum'];
+        $courseshortname = $params['anyanyaca'] . '_' . $params['asscodnum'] .
+            '_' . $params['vaccodnum'] . '_' . $params['gaccodnum'];
 
         // Verificar que el curso exista.
-        if (!$course = $DB->get_record('course', array('shortname' => $courseshortname))) {
+        if (!$course = $DB->get_record('course', ['shortname' => $courseshortname])) {
             throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
         }
 
-        // Aquí podrías implementar la lógica para registrar el examen.
-        // Por ejemplo, insertar un registro en una tabla personalizada:
+        // Logica de registro.
         $record = new stdClass();
-        $record->userid      = $user->id;
-        $record->courseid    = $course->id;
-        $record->examdata    = $params['examdata'];
-        $record->timecreated = time();
-        $record->timemodified= time();
+        $record->userid       = $user->id;
+        $record->courseid     = $course->id;
+        $record->examdata     = $params['examdata'];
+        $record->timecreated  = time();
+        $record->timemodified = time();
 
         // Asegúrate de haber creado previamente la tabla local_docuwarews_exams en tu plugin.
         $insertid = $DB->insert_record('recibeexamen_exams', $record);
 
-        return array('status' => 'success', 'examid' => $insertid);
+        return ['status' => 'success', 'examid' => $insertid];
     }
 
     /**
@@ -96,10 +99,9 @@ class local_recibeexamen_external extends external_api {
      */
     public static function receive_exam_returns() {
         return new external_single_structure(
-            array(
-                'status' => new external_value(PARAM_TEXT, 'Estado de la operación'),
-                'examid' => new external_value(PARAM_INT, 'ID del registro del examen')
-            )
+            ['status' => new external_value(PARAM_TEXT, 'Estado de la operación'),
+             'examid' => new external_value(PARAM_INT, 'ID del registro del examen'),
+            ]
         );
     }
 }

@@ -24,21 +24,21 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$functions = array(
-    'local_recibeexamen_receive_exam' => array(
+$functions = [
+    'local_recibeexamen_receive_exam' => [
          'classname'   => 'local_recibeexamen_external',
          'methodname'  => 'receive_exam',
          'classpath'   => 'local/recibeexamen/externallib.php',
          'description' => 'Recibe un examen y lo registra en el curso indicado',
          'type'        => 'write',
          'ajax'        => true,
-    ),
-);
+    ],
+];
 
-$services = array(
-    'DocuWare Web Service' => array(
-         'functions' => array ('local_recibeexamen_receive_exam'),
+$services = [
+    'DocuWare Web Service' => [
+         'functions' => ['local_recibeexamen_receive_exam'],
          'restrictedusers' => 1,
-         'enabled'=>1,
-    )
-);
+         'enabled' => 1,
+    ],
+];

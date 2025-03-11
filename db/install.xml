@@ -2,18 +2,20 @@
 <XMLDB PATH="local/recibeexamen/db" VERSION="20101203" COMMENT="XMLDB file for Moodle mod/jitsi"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
-><TABLES>
-    <table name="recibeexamen_exams" comment="Almacena los exámenes recibidos de DocuWare">
-        <field name="id" type="int" length="10" unsigned="true" notnull="true" sequence="true" comment="Clave primaria"/>
-        <field name="userid" type="int" length="10" unsigned="true" notnull="true" comment="ID del usuario"/>
-        <field name="courseid" type="int" length="10" unsigned="true" notnull="true" comment="ID del curso"/>
-        <field name="examdata" type="text" notnull="true" comment="Datos del examen"/>
-        <field name="timecreated" type="int" length="10" unsigned="true" notnull="true" comment="Fecha de creación"/>
-        <field name="timemodified" type="int" length="10" unsigned="true" notnull="true" comment="Fecha de última modificación"/>
-        
-        <key name="primary" type="primary" fields="id"/>
-        <key name="userid_idx" type="index" fields="userid"/>
-        <key name="courseid_idx" type="index" fields="courseid"/>
-    </table>
-</TABLES>
-</xmldb>
+>
+  <TABLES>
+    <TABLE NAME="recibeexamen_exams" COMMENT="Almacena los exámenes recibidos de DocuWare">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" SEQUENCE="true" COMMENT="Clave primaria"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="ID del usuario"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="ID del curso"/>
+        <FIELD NAME="examdata" TYPE="text" NOTNULL="true" COMMENT="Datos del examen"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="Fecha de creación"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="Fecha de última modificación"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="id" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
