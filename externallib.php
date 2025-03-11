@@ -86,7 +86,6 @@ class local_recibeexamen_external extends external_api {
         $record->timecreated  = time();
         $record->timemodified = time();
 
-        // Asegúrate de haber creado previamente la tabla local_docuwarews_exams en tu plugin.
         $insertid = $DB->insert_record('recibeexamen_exams', $record);
 
         return ['status' => 'success', 'examid' => $insertid];
