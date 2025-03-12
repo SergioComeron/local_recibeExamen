@@ -10,6 +10,7 @@
         <FIELD NAME="userid" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="ID del usuario"/>
         <FIELD NAME="courseid" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="ID del curso"/>
         <FIELD NAME="examdata" TYPE="text" NOTNULL="true" COMMENT="Datos del examen"/>
+        <FIELD NAME="pdfname" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Nombre del archivo PDF"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="Fecha de creación"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" UNSIGNED="true" NOTNULL="true" COMMENT="Fecha de última modificación"/>
       </FIELDS>

@@ -18,15 +18,32 @@
  * Version metadata for the local_recibeexamen plugin.
  *
  * @package   local_recibeexamen
- * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
+ * @copyright 2025, Sergio Comerón
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2025031200;
-$plugin->requires = 2014051206;
-$plugin->component = 'local_recibeexamen';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v0.0.1';
+function xmldb_local_recibeexamen_upgrade($oldversion) {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2025031200) {
+
+        // Define field pdfname to be added to recibeexamen_exams.
+        $table = new xmldb_table('recibeexamen_exams');
+        $field = new xmldb_field('pdfname', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'examdata');
+
+        // Conditionally launch add field pdfname.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Recibeexamen savepoint reached.
+        upgrade_plugin_savepoint(true, 2025031200, 'local', 'recibeexamen');
+    }
+
+    return true;
+}
 
