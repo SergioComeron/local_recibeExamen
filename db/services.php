@@ -36,7 +36,7 @@ $functions = [
 ];
 
 $services = [
-    'DocuWare Web Service' => [
+    'Recibe Examen Web Service' => [
          'functions' => ['local_recibeexamen_receive_exam'],
          'restrictedusers' => 1,
          'enabled' => 1,

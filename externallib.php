@@ -65,7 +65,7 @@ class local_recibeexamen_external extends external_api {
                 'gaccodnum' => $gaccodnum, 'anyanyaca' => $anyanyaca]);
 
         // Verificar que el usuario exista.
-        if (!$user = $DB->get_record('user', ['username' => $params['username']])) {
+        if (!$user = $DB->get_record('user', ['username' => $params['idusuldap']])) {
             throw new moodle_exception('errorusernotfound', 'local_recibeexamen');
         }
 
@@ -82,7 +82,7 @@ class local_recibeexamen_external extends external_api {
         $record = new stdClass();
         $record->userid       = $user->id;
         $record->courseid     = $course->id;
-        $record->examdata     = $params['examdata'];
+        $record->examdata     = 'prueba inicial';
         $record->timecreated  = time();
         $record->timemodified = time();
 
