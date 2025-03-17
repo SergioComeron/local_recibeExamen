@@ -42,11 +42,11 @@ class local_recibeexamen_external extends external_api {
         }
     
         // 🔹 Paso 1: Buscar o crear la tarea en el curso.
-        $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => 'Examen final2 ' . $gaccodnum]);
+        $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => 'Examen final11 ' . $gaccodnum]);
         if (!$assign) {
             $assign_data = new stdClass();
             $assign_data->course = $course->id;
-            $assign_data->name = 'Examen final2 ' . $gaccodnum;
+            $assign_data->name = 'Examen final11 ' . $gaccodnum;
             $assign_data->intro = 'Sube aquí tu examen.';
             $assign_data->introformat = FORMAT_HTML;
             $assign_data->duedate = time() + (7 * 24 * 60 * 60);
@@ -113,6 +113,7 @@ class local_recibeexamen_external extends external_api {
             $submission->status = 'submitted';
             $submission->attemptnumber = 0;
             $submission->groupid = 0;
+            $submission->latest = 1;
     
             $submission->id = $DB->insert_record('assign_submission', $submission);
         } else {
@@ -143,7 +144,11 @@ class local_recibeexamen_external extends external_api {
                 'filepath'    => '/',
                 'filename'    => $filename,
                 'timecreated' => time(),
-                'timemodified'=> time()
+                'timemodified'=> time(),
+                'userid'      => $user->id,
+                'source'      => $filename,
+                'author'      => $user->firstname . ' ' . $user->lastname,
+                'license'     => 'unknown',
             ];
     
             $stored_file = $fs->create_file_from_pathname($file_record, $uploadedfile['tmp_name']);
@@ -164,7 +169,7 @@ class local_recibeexamen_external extends external_api {
                     'content'        => '',
                     'pathnamehashes' => array_keys($files)
                 ],
-                'userid'   => $USER->id
+                'userid'   => $user->id
             ];
     
             // Se usa el evento assessable_uploaded definido en assignsubmission_file.
@@ -194,6 +199,7 @@ class local_recibeexamen_external extends external_api {
                 $filesubmission = new stdClass();
                 $filesubmission->submission = $submission->id;
                 $filesubmission->assignment = $assign->id;
+                $filesubmission->userid = $user->id;
                 $filesubmission->numfiles = $numfiles;
                 $DB->insert_record('assignsubmission_file', $filesubmission);
             }
