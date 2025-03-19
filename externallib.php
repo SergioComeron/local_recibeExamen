@@ -14,20 +14,22 @@ class local_recibeexamen_external extends external_api {
                 'asscodnum' => new external_value(PARAM_INT, 'ID del curso'),
                 'vaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
                 'gaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
-                'anyanyaca' => new external_value(PARAM_RAW, 'Datos del examen')
+                'anyanyaca' => new external_value(PARAM_RAW, 'Curso académico'),
+                'tcocodalf' => new external_value(PARAM_RAW, 'Convocatoria')
             ]
         );
     }
 
-    public static function receive_exam($idusuldap, $asscodnum, $vaccodnum, $gaccodnum, $anyanyaca) {
+    public static function receive_exam($idusuldap, $asscodnum, $vaccodnum, $gaccodnum, $anyanyaca, $tcocodalf) {
         global $DB, $USER, $CFG;
-    
+        $cmid = 0;
         $params = self::validate_parameters(self::receive_exam_parameters(), [
             'idusuldap' => $idusuldap,
             'asscodnum' => $asscodnum,
             'vaccodnum' => $vaccodnum,
             'gaccodnum' => $gaccodnum,
-            'anyanyaca' => $anyanyaca
+            'anyanyaca' => $anyanyaca, 
+            'tcocodalf' => $tcocodalf
         ]);
     
         if (!$user = $DB->get_record('user', ['username' => $params['idusuldap']])) {
@@ -41,10 +43,41 @@ class local_recibeexamen_external extends external_api {
             throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
         }
     
-        // 🔹 Paso 1: Buscar o crear la tarea en el curso.
-        $assignname = 'Examen finalmod2 ' . $gaccodnum;
+        $assignname = 'Examen final '.' '. $tcocodalf .'-' . $anyanyaca.'/'. $gaccodnum;
         $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => $assignname]);
+        $module = $DB->get_record('modules', ['name' => 'assign']);
+
         if (!$assign) {
+            if (!$module) {
+                throw new moodle_exception('errorinvalidmodule', 'local_recibeexamen');
+            }
+            $cm = new stdClass();
+            $cm->course = $course->id;
+            $cm->module = $module->id;
+            $cm->instance = 0;
+            $cm->section = 1;
+            $cm->visible = 1;
+            $cm->visibleoncoursepage = 1;
+            $cm->added = time();
+            $cm->completion = 0;
+            $cm->groupmode = 0;
+            $cm->lang = '';
+    
+            $cmid = $DB->insert_record('course_modules', $cm);
+
+            $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 1]);
+            if (!$section) {
+                $section = new stdClass();
+                $section->course = $course->id;
+                $section->section = 1;
+                $section->sequence = $cmid;
+                $section->visible = 1;
+                $DB->insert_record('course_sections', $section);
+            } else {
+                $section->sequence = trim($section->sequence . ',' . $cmid, ',');
+                $DB->update_record('course_sections', $section);
+            }
+
             $assign_data = new stdClass();
             $assign_data->course = $course->id;
             $assign_data->name = $assignname;
@@ -59,61 +92,53 @@ class local_recibeexamen_external extends external_api {
             $assign_data->teamsubmission = 0;
             $assign_data->timecreated = time();
             $assign_data->timemodified = time();
+            $assign_data->sendnotifications = 0;
+            $assign_data->sendlatenotifications = 0;  // Agregado para evitar valor nulo
             $assign_data->completionsubmit = 1;
             $assign_data->gradingduedate = time() + (7 * 24 * 60 * 60);
             $assign_data->activity = '';
             $assign_data->activityformat = 1;
-    
-            $assign_data->id = $DB->insert_record('assign', $assign_data);
-            $assign = $assign_data;
-    
-            // 🔹 Paso 2: Crear el módulo del curso.
-            $module = $DB->get_record('modules', ['name' => 'assign']);
-            if (!$module) {
-                throw new moodle_exception('errorinvalidmodule', 'local_recibeexamen');
-            }
-    
-            $cm = new stdClass();
-            $cm->course = $course->id;
-            $cm->module = $module->id;
-            $cm->instance = $assign->id;
-            $cm->section = 1;
-            $cm->visible = 1;
-            $cm->visibleoncoursepage = 1;
-            $cm->added = time();
-            $cm->completion = 0;
-            $cm->groupmode = 0;
-            $cm->lang = '';
-    
-            $cmid = $DB->insert_record('course_modules', $cm);
-            //$DB->set_field('course_modules', 'idnumber', $assign->id, ['id' => $cmid]);
-    
-            // 🔹 Paso 3: Asociar el módulo con la sección del curso.
-            $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 1]);
-            if (!$section) {
-                $section = new stdClass();
-                $section->course = $course->id;
-                $section->section = 1;
-                $section->sequence = $cmid;
-                $section->visible = 1;
-                $DB->insert_record('course_sections', $section);
+            $assign_data->coursemodule = $cmid;
+            $assign_data->cutoffdate = 0;
+            $assign_data->requireallteammemberssubmit = 0;
+            $assign_data->teamsubmissiongroupingid = 0;
+            $assign_data->blindmarking = 0;
+            $assign_data->hidegrader = 0;
+            $assign_data->revealidentities = 0;
+            $assign_data->attemptreopenmethod = 'none';
+            $assign_data->maxattempts = -1;
+            $assign_data->markingworkflow = 0;
+            $assign_data->markingallocation = 0;
+            $assign_data->markinganonymous = 0;
+            $assign_data->sendstudentnotifications = 1;
+            $assign_data->preventsubmissionnotingroup = 0;
+            $assign_data->submissionattachments = 0;
+            $assign_data->assignsubmission_file_enabled = 1; // Habilitar la entrega de archivos
+            $assign_data->assignsubmission_file_maxfiles = 1; // Número máximo de archivos permitidos
+            $assign_data->assignsubmission_file_maxsizebytes = 10485760; // Tamaño máximo de archivo en bytes (10 MB)
+            $assign_data->assignfeedback_editpdf_enabled = 1; // Habilitar el editor PDF para correcciones
+
+            $assignid = assign_add_instance($assign_data);
+            $DB->set_field('course_modules', 'instance', $assignid, ['id' => $cmid]);
+
+            $assign = $DB->get_record('assign', ['id' => $assignid]);
+            if ($assign) {
+                echo "Tarea creada correctamente con ID: " . $assign->id;
             } else {
-                $section->sequence = trim($section->sequence . ',' . $cmid, ',');
-                $DB->update_record('course_sections', $section);
+                echo "Error al crear la tarea.";
             }
-    
-            // 🔹 Paso 4: Purga la caché del curso.
+
             rebuild_course_cache($course->id);
+
         }
     
-        // 🔹 Paso 5: Crear o actualizar la entrega del usuario.
         $submission = $DB->get_record('assign_submission', [
-            'assignment' => $assign->id,
+            'assignment' => $assignid,
             'userid'     => $user->id
         ]);
         if (!$submission) {
             $submission = new stdClass();
-            $submission->assignment = $assign->id;
+            $submission->assignment = $assignid;
             $submission->userid = $user->id;
             $submission->timecreated = time();
             $submission->timemodified = time();
@@ -128,10 +153,8 @@ class local_recibeexamen_external extends external_api {
             $DB->update_record('assign_submission', $submission);
         }
     
-        // 🔹 Paso 6: Subir el archivo al área de la entrega.
-        $coursemodule = $DB->get_record('course_modules', ['module' => $module->id, 'instance' => $assign->id]);
+        $coursemodule = $DB->get_record('course_modules', ['module' => $module->id, 'instance' => $assignid]);
         $cmid = $coursemodule->id;
-    
         $stored_file = null;
         if (!empty($_FILES['pdfdata']) && $_FILES['pdfdata']['error'] === UPLOAD_ERR_OK) {
             $uploadedfile = $_FILES['pdfdata'];
@@ -160,14 +183,11 @@ class local_recibeexamen_external extends external_api {
     
             $stored_file = $fs->create_file_from_pathname($file_record, $uploadedfile['tmp_name']);
         }
-    
-        // 🔹 Paso 7: Disparar el evento de archivo evaluable y actualizar el registro en assignsubmission_file.
+
         if (!empty($stored_file)) {
-            // Construir un array con el archivo subido (para un único archivo).
             $files = [];
             $files[$stored_file->get_pathnamehash()] = $filename;
     
-            // Preparar los parámetros para el evento.
             $eventparams = [
                 'context'  => $context,
                 'courseid' => $course->id,
@@ -179,12 +199,10 @@ class local_recibeexamen_external extends external_api {
                 'userid'   => $user->id
             ];
     
-            // Se usa el evento assessable_uploaded definido en assignsubmission_file.
             $event = \assignsubmission_file\event\assessable_uploaded::create($eventparams);
             $event->set_legacy_files($files);
             $event->trigger();
     
-            // Contar el número de archivos en el área de la entrega.
             $numfiles = count($fs->get_area_files(
                 $context->id,
                 'assignsubmission_file',
@@ -194,7 +212,6 @@ class local_recibeexamen_external extends external_api {
                 false
             ));
     
-            // Actualizar (o insertar) el registro en assignsubmission_file.
             $filesubmission = $DB->get_record('assignsubmission_file', [
                 'submission' => $submission->id,
                 'assignment' => $assign->id
@@ -205,26 +222,22 @@ class local_recibeexamen_external extends external_api {
             } else {
                 $filesubmission = new stdClass();
                 $filesubmission->submission = $submission->id;
-                $filesubmission->assignment = $assign->id;
+                $filesubmission->assignment = $assignid;
                 $filesubmission->userid = $user->id;
                 $filesubmission->numfiles = $numfiles;
                 $DB->insert_record('assignsubmission_file', $filesubmission);
             }
         }
-    
-        // 🔹 Paso 8: Purga la caché para que se actualice la interfaz.
+
         purge_caches();
     
         return [
             'status'       => 'success',
-            'assignid'     => $assign->id,
+            'assignid'     => $assignid,
             'submissionid' => $submission->id,
             'cmid'         => $cmid
         ];
     }
-    
-    
-    
 
     public static function receive_exam_returns() {
         return new external_single_structure(
