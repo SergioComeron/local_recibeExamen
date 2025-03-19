@@ -42,7 +42,28 @@ class local_recibeexamen_external extends external_api {
         if (!$course = $DB->get_record('course', ['shortname' => $courseshortname])) {
             throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
         }
-    
+
+
+        // Buscar cursos en los que este curso está metaenlazado.
+        $sql = "SELECT e.id, e.courseid, c.fullname
+                FROM {enrol} e
+                JOIN {course} c ON e.courseid = c.id
+                WHERE e.enrol = 'meta' AND e.customint1 = :courseid";
+
+        $meta_courses = $DB->get_records_sql($sql, ['courseid' => $course->id]);
+        /// --->>> HAY QUE MIRAR SI PUEDE HABER MAS DE UN METAENLAZADO <---- PODRÍA DAR PROBLEMAS.
+        if ($meta_courses) {
+            $meta_course = reset($meta_courses);
+            if ($meta_course) {
+                $course = $DB->get_record('course', ['id' => $meta_course->courseid]);
+                if (!$course) {
+                    throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
+                }
+            } else {
+                throw new moodle_exception('errorcoursenotfound', 'local_recibeexamen');
+            }
+        }
+
         $assignname = 'Examen final '.' '. $tcocodalf .'-' . $anyanyaca.'/'. $gaccodnum;
         $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => $assignname]);
         $module = $DB->get_record('modules', ['name' => 'assign']);
