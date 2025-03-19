@@ -64,7 +64,7 @@ class local_recibeexamen_external extends external_api {
             }
         }
 
-        $assignname = 'Examen final '.' '. $tcocodalf .'-' . $anyanyaca.'/'. $gaccodnum;
+        $assignname = 'Examen final '.' '. $tcocodalf .'-' . $anyanyaca;
         $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => $assignname]);
         $module = $DB->get_record('modules', ['name' => 'assign']);
 
