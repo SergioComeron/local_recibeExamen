@@ -129,7 +129,9 @@ class local_recibeexamen_external extends external_api {
             }
 
             rebuild_course_cache($course->id);
-
+        } else {
+            $assignid = $assign->id;
+            $cmid = $DB->get_field('course_modules', 'id', ['module' => $module->id, 'instance' => $assignid]);
         }
     
         $submission = $DB->get_record('assign_submission', [
