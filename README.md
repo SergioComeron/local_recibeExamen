@@ -50,7 +50,3 @@ Si desea contribuir a este proyecto, por favor siga estos pasos:
 ## Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT. Consulte el archivo LICENSE para más detalles.
-
-## Contacto
-
-Para cualquier consulta, puede contactar con el mantenedor del proyecto en [correo@example.com](mailto:correo@example.com).
