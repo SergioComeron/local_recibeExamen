@@ -42,13 +42,15 @@ class local_recibeexamen_external extends external_api {
         }
     
         // 🔹 Paso 1: Buscar o crear la tarea en el curso.
-        $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => 'Examen final11 ' . $gaccodnum]);
+        $assignname = 'Examen finalmod2 ' . $gaccodnum;
+        $assign = $DB->get_record('assign', ['course' => $course->id, 'name' => $assignname]);
         if (!$assign) {
             $assign_data = new stdClass();
             $assign_data->course = $course->id;
-            $assign_data->name = 'Examen final11 ' . $gaccodnum;
-            $assign_data->intro = 'Sube aquí tu examen.';
+            $assign_data->name = $assignname;
+            $assign_data->intro = '';
             $assign_data->introformat = FORMAT_HTML;
+            $assign_data->alwaysshowdescription = 1;
             $assign_data->duedate = time() + (7 * 24 * 60 * 60);
             $assign_data->allowsubmissionsfromdate = time();
             $assign_data->grade = 100;
@@ -57,6 +59,10 @@ class local_recibeexamen_external extends external_api {
             $assign_data->teamsubmission = 0;
             $assign_data->timecreated = time();
             $assign_data->timemodified = time();
+            $assign_data->completionsubmit = 1;
+            $assign_data->gradingduedate = time() + (7 * 24 * 60 * 60);
+            $assign_data->activity = '';
+            $assign_data->activityformat = 1;
     
             $assign_data->id = $DB->insert_record('assign', $assign_data);
             $assign = $assign_data;
@@ -77,9 +83,10 @@ class local_recibeexamen_external extends external_api {
             $cm->added = time();
             $cm->completion = 0;
             $cm->groupmode = 0;
+            $cm->lang = '';
     
             $cmid = $DB->insert_record('course_modules', $cm);
-            $DB->set_field('course_modules', 'idnumber', $assign->id, ['id' => $cmid]);
+            //$DB->set_field('course_modules', 'idnumber', $assign->id, ['id' => $cmid]);
     
             // 🔹 Paso 3: Asociar el módulo con la sección del curso.
             $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 1]);
