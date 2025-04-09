@@ -72,33 +72,39 @@ class local_recibeexamen_external extends external_api {
             if (!$module) {
                 throw new moodle_exception('errorinvalidmodule', 'local_recibeexamen');
             }
+
+            // Buscar la última sección del curso
+            $last_section = $DB->get_record_sql('SELECT MAX(section) AS section FROM {course_sections} WHERE course = ?', [$course->id]);
+            $new_section_number = $last_section->section + 1;
+
+            // Crear una nueva sección
+            $section = new stdClass();
+            $section->course = $course->id;
+            $section->section = $new_section_number;
+            $section->sequence = '';
+            $section->visible = 1;
+            $section->id = $DB->insert_record('course_sections', $section);
+
+            // Crear el módulo de curso para la tarea
             $cm = new stdClass();
             $cm->course = $course->id;
             $cm->module = $module->id;
             $cm->instance = 0;
-            $cm->section = 1;
-            $cm->visible = 1;
+            $cm->section = $new_section_number;
+            $cm->visible = 0;
             $cm->visibleoncoursepage = 1;
             $cm->added = time();
             $cm->completion = 0;
             $cm->groupmode = 0;
             $cm->lang = '';
-    
+
             $cmid = $DB->insert_record('course_modules', $cm);
 
-            $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 1]);
-            if (!$section) {
-                $section = new stdClass();
-                $section->course = $course->id;
-                $section->section = 1;
-                $section->sequence = $cmid;
-                $section->visible = 1;
-                $DB->insert_record('course_sections', $section);
-            } else {
-                $section->sequence = trim($section->sequence . ',' . $cmid, ',');
-                $DB->update_record('course_sections', $section);
-            }
+            // Actualizar la secuencia de la nueva sección
+            $section->sequence = $cmid;
+            $DB->update_record('course_sections', $section);
 
+            // Crear la tarea
             $assign_data = new stdClass();
             $assign_data->course = $course->id;
             $assign_data->name = $assignname;
