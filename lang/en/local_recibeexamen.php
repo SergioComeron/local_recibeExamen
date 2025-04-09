@@ -28,3 +28,6 @@ $string['pluginname'] = 'Recibe Examen';
 $string['recibeexamen'] = 'Recibe Examen';
 $string['recibeexamen:addinstance'] = 'Add a new Recibe Examen block';
 $string['recibeexamen:myaddinstance'] = 'Add a new Recibe Examen block to My Moodle page';
+$string['errorusernotfound'] = 'The specified user was not found.';
+$string['errorcoursenotfound'] = 'The specified course was not found.';
+$string['errorinvalidmodule'] = 'The specified module is invalid.';
