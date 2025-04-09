@@ -31,3 +31,10 @@ $string['recibeexamen:myaddinstance'] = 'Add a new Recibe Examen block to My Moo
 $string['errorusernotfound'] = 'The specified user was not found.';
 $string['errorcoursenotfound'] = 'The specified course was not found.';
 $string['errorinvalidmodule'] = 'The specified module is invalid.';
+$string['examreceivedsubject'] = 'Examen recibido';
+$string['examreceivedmessage'] = 'Hola {username},
+
+Tu examen para el curso "{coursename}" ha sido recibido correctamente. La tarea asociada es "{assignname}".
+
+Gracias.';
+$string['errorcannotemail'] = 'No se pudo enviar el correo electrónico al usuario.';

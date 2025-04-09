@@ -259,7 +259,27 @@ class local_recibeexamen_external extends external_api {
         }
 
         purge_caches();
-    
+
+        // Enviar correo al usuario.
+        $subject = get_string('examreceivedsubject', 'local_recibeexamen');
+        $message = get_string('examreceivedmessage', 'local_recibeexamen', [
+            'username' => fullname($user),
+            'coursename' => $course->fullname,
+            'assignname' => $assign->name,
+        ]);
+
+        $emailresult = email_to_user(
+            $user, // Usuario destinatario.
+            core_user::get_support_user(), // Usuario remitente (soporte).
+            $subject, // Asunto del correo.
+            $message, // Mensaje en texto plano.
+            $message // Mensaje en formato HTML (puedes usar el mismo si no necesitas HTML).
+        );
+
+        if (!$emailresult) {
+            throw new moodle_exception('errorcannotemail', 'local_recibeexamen');
+        }
+
         return [
             'status'       => 'success',
             'assignid'     => $assignid,
