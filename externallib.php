@@ -4,6 +4,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once("$CFG->libdir/externallib.php");
 require_once("$CFG->dirroot/mod/assign/lib.php");
 require_once("$CFG->dirroot/course/lib.php");
+require_once($CFG->libdir . '/pdflib.php'); // Incluir la biblioteca TCPDF
 
 class local_recibeexamen_external extends external_api {
 
@@ -260,25 +261,52 @@ class local_recibeexamen_external extends external_api {
 
         purge_caches();
 
-        // Enviar correo al usuario.
-        $subject = get_string('examreceivedsubject', 'local_recibeexamen');
-        $message = get_string('examreceivedmessage', 'local_recibeexamen', [
-            'username' => fullname($user),
-            'coursename' => $course->fullname,
-            'assignname' => $assign->name,
-        ]);
+        // Generar el archivo PDF
+        $pdf = new pdf();
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetAuthor('Moodle');
+        $pdf->SetTitle('Justificante');
+        $pdf->SetSubject('Justificante');
+        $pdf->SetKeywords('Justificante, Moodle');
 
+        // Agregar contenido al PDF
+        $pdf->AddPage();
+        $pdf->SetFont('helvetica', '', 12);
+        $pdf->Write(0, "Justificante generado automáticamente\n\n");
+        $pdf->Write(0, "Usuario: {$user->username}\n");
+        $pdf->Write(0, "Este es su justificante generado automáticamente.\n\nSaludos cordiales.");
+
+        // Guardar el PDF en un archivo temporal
+        $tempdir = make_temp_directory('local_recibeexamen');
+        $pdfpath = $tempdir . "/justificante_{$user->username}.pdf";
+        $pdf->Output($pdfpath, 'F');
+
+        // Preparar el archivo adjunto
+        $attachment = $pdfpath;
+        $attachname = "justificante_{$user->username}.pdf";
+
+        // Generar el asunto y cuerpo del mensaje
+        $subject = "Justificante - {$user->username}";
+        $message = "Estimado/a {$user->username},\n\nEste es su justificante generado automáticamente.\n\n";
+        $message .= "Saludos cordiales.";
+
+        // Enviar correo al usuario con el archivo adjunto
         $emailresult = email_to_user(
-            $user, // Usuario destinatario.
-            core_user::get_support_user(), // Usuario remitente (soporte).
-            $subject, // Asunto del correo.
-            $message, // Mensaje en texto plano.
-            $message // Mensaje en formato HTML (puedes usar el mismo si no necesitas HTML).
+            $user, 
+            core_user::get_support_user(), 
+            $subject, 
+            $message, 
+            $message, 
+            $attachment, 
+            $attachname
         );
 
         if (!$emailresult) {
             throw new moodle_exception('errorcannotemail', 'local_recibeexamen');
         }
+
+        // Eliminar el archivo temporal después de enviarlo
+        unlink($pdfpath);
 
         return [
             'status'       => 'success',
