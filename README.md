@@ -34,18 +34,32 @@ curl -X POST 'http://localhost/stable_404/webservice/rest/server.php' \
 -F 'gaccodnum=22241' \
 -F 'anyanyaca=2024-25' \
 -F 'tcocodalf=FEB' \
+-F 'planomid1=Plan de estudios ejemplo' \
+-F 'assnomid1=Nombre de la asignatura ejemplo' \
+-F 'fechainicio=2025-04-10T09:00:00+02:00' \
+-F 'fechafin=2025-04-10T11:00:00+02:00' \
+-F 'sede=Campus Madrid' \
+-F 'exacodnum=12345' \
+-F 'dniprs=12345678A' \
 -F 'pdfdata=@lorem.pdf'
 ```
 
-## Contribuir
+### Parámetros
 
-Si desea contribuir a este proyecto, por favor siga estos pasos:
-
-1. Haga un fork del repositorio.
-2. Cree una nueva rama (`git checkout -b feature/nueva-funcionalidad`).
-3. Realice sus cambios y haga commit (`git commit -am 'Añadir nueva funcionalidad'`).
-4. Haga push a la rama (`git push origin feature/nueva-funcionalidad`).
-5. Cree un nuevo Pull Request.
+- **idusuldap**: Nombre de usuario del estudiante.
+- **asscodnum**: ID del curso.
+- **vaccodnum**: ID del curso.
+- **gaccodnum**: ID del curso.
+- **anyanyaca**: Curso académico.
+- **tcocodalf**: Convocatoria.
+- **planomid1**: Plan de estudios.
+- **assnomid1**: Nombre de la asignatura.
+- **fechainicio**: Fecha de inicio del examen en formato ISO 8601 con zona horaria.
+- **fechafin**: Fecha de fin del examen en formato ISO 8601 con zona horaria.
+- **sede**: Sede del examen.
+- **exacodnum**: ID del examen.
+- **dniprs**: DNI del estudiante.
+- **pdfdata**: Archivo PDF que contiene los datos del examen.
 
 ## Licencia
 

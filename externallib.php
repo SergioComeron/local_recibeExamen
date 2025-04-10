@@ -16,12 +16,21 @@ class local_recibeexamen_external extends external_api {
                 'vaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
                 'gaccodnum' => new external_value(PARAM_INT, 'ID del curso'),
                 'anyanyaca' => new external_value(PARAM_RAW, 'Curso académico'),
-                'tcocodalf' => new external_value(PARAM_RAW, 'Convocatoria')
+                'tcocodalf' => new external_value(PARAM_RAW, 'Convocatoria'),
+                'planomid1' => new external_value(PARAM_RAW, 'Plan de estudios'),
+                'assnomid1' => new external_value(PARAM_RAW, 'Nombre de la asignatura'),
+                'fechainicio' => new external_value(PARAM_RAW, 'Fecha de inicio del examen en formato ISO 8601 con zona horaria'),
+                'fechafin' => new external_value(PARAM_RAW, 'Fecha de fin del examen en formato ISO 8601 con zona horaria'),
+                'sede' => new external_value(PARAM_RAW, 'Sede del examen'),
+                'exacodnum' => new external_value(PARAM_INT, 'ID del examen'),
+                'dniprs' => new external_value(PARAM_RAW, 'DNI del estudiante'),
+                'exacodnum' => new external_value(PARAM_INT, 'ID del examen'),
             ]
         );
     }
 
-    public static function receive_exam($idusuldap, $asscodnum, $vaccodnum, $gaccodnum, $anyanyaca, $tcocodalf) {
+    public static function receive_exam($idusuldap, $asscodnum, $vaccodnum, $gaccodnum, $anyanyaca, $tcocodalf, $planomid1,
+      $assnomid1, $fechainicio, $fechafin, $sede, $exacodnum, $dniprs) {
         global $DB, $USER, $CFG;
         $cmid = 0;
         $params = self::validate_parameters(self::receive_exam_parameters(), [
@@ -30,7 +39,14 @@ class local_recibeexamen_external extends external_api {
             'vaccodnum' => $vaccodnum,
             'gaccodnum' => $gaccodnum,
             'anyanyaca' => $anyanyaca, 
-            'tcocodalf' => $tcocodalf
+            'tcocodalf' => $tcocodalf,
+            'planomid1' => $planomid1,
+            'assnomid1' => $assnomid1,
+            'fechainicio' => $fechainicio,
+            'fechafin' => $fechafin,
+            'sede' => $sede,
+            'exacodnum' => $exacodnum,
+            'dniprs' => $dniprs,
         ]);
     
         if (!$user = $DB->get_record('user', ['username' => $params['idusuldap']])) {
@@ -292,7 +308,7 @@ class local_recibeexamen_external extends external_api {
         <div class="text">
             Collado Villalba, a ' . $fecha . '<br><br>
 
-            D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . ($user->idnumber ?? 'N/D') . '</strong>,
+            D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . (obtener_numdocumento_ldap($user->username) ?? 'N/D') . '</strong>,
             matriculado/a en esta Universidad en estudios universitarios conducentes a una titulación oficial, ha asistido a
             la realización del examen convocado por la Universidad a Distancia de Madrid, en la fecha, hora y sede que figura
             a continuación, expidiéndose a petición del interesado el presente certificado a los efectos oportunos.
@@ -300,12 +316,12 @@ class local_recibeexamen_external extends external_api {
 
         <div class="info">
             <strong>Información relativa al examen:</strong><br><br>
-            <strong>Código examen:</strong> ' . $params['asscodnum'] . '<br>
-            <strong>Titulación:</strong> [126] Grado en Magisterio de Educación Primaria<br>
-            <strong>Asignatura:</strong> ' . $assign->name . '<br>
-            <strong>Fecha y hora de inicio:</strong> ' . $fecha . ' 20:30 EUROPE/MADRID<br>
-            <strong>Fecha y hora de finalización:</strong> ' . $fecha . ' 21:45 EUROPE/MADRID<br>
-            <strong>Sede:</strong> on-line.
+            <strong>Código examen:</strong> ' . $exacodnum . '<br>
+            <strong>Titulación:</strong> '. $planomid1 .'<br>
+            <strong>Asignatura:</strong> ' . $assnomid1 . '<br>
+            <strong>Fecha y hora de inicio:</strong> ' . $fechainicio . '<br>
+            <strong>Fecha y hora de finalización:</strong> ' . $fechafin . '<br>
+            <strong>Sede:</strong> ' . $sede . '<br>
         </div><br><br>
 
         <div class="text">Firma y sello</div><br><br>
@@ -373,4 +389,41 @@ class local_recibeexamen_external extends external_api {
             ]
         );
     }
+}
+
+//Quizá no merece la pena porque la gente de examenes tiene el dni.
+function obtener_numdocumento_ldap(string $uid): ?string {
+    $host = "ldap://172.21.4.20:389";
+    $base_dn = "cn=users,dc=udima,dc=es";
+    $filtro = "(uid=$uid)";
+    $atributos = ["numdocumento"];
+
+    $ldapconn = ldap_connect($host);
+    ldap_set_option($ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
+
+    if (!$ldapconn) {
+        debugging("No se pudo conectar al servidor LDAP", DEBUG_DEVELOPER);
+        return null;
+    }
+
+    // No se necesita autenticación, bind anónimo
+    if (!ldap_bind($ldapconn)) {
+        debugging("Fallo en el bind LDAP", DEBUG_DEVELOPER);
+        return null;
+    }
+
+    $resultado = ldap_search($ldapconn, $base_dn, $filtro, $atributos);
+    if (!$resultado) {
+        debugging("Error en la búsqueda LDAP", DEBUG_DEVELOPER);
+        return null;
+    }
+
+    $entradas = ldap_get_entries($ldapconn, $resultado);
+    ldap_unbind($ldapconn);
+
+    if ($entradas["count"] > 0 && isset($entradas[0]["numdocumento"][0])) {
+        return $entradas[0]["numdocumento"][0];
+    }
+
+    return null; // No encontrado
 }
