@@ -261,52 +261,99 @@ class local_recibeexamen_external extends external_api {
 
         purge_caches();
 
-        // Generar el archivo PDF
+        // Crear el PDF
+        $fs = get_file_storage();
         $pdf = new pdf();
         $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetAuthor('Moodle');
-        $pdf->SetTitle('Justificante');
+        $pdf->SetAuthor('UDIMA');
+        $pdf->SetTitle('Justificante de asistencia');
         $pdf->SetSubject('Justificante');
-        $pdf->SetKeywords('Justificante, Moodle');
-
-        // Agregar contenido al PDF
+        $pdf->SetMargins(20, 30, 20); // Margen superior más amplio para el logo
         $pdf->AddPage();
-        $pdf->SetFont('helvetica', '', 12);
-        $pdf->Write(0, "Justificante generado automáticamente\n\n");
-        $pdf->Write(0, "Usuario: {$user->username}\n");
-        $pdf->Write(0, "Este es su justificante generado automáticamente.\n\nSaludos cordiales.");
 
-        // Guardar el PDF en un archivo temporal
+        // Insertar logotipo (ajusta tamaño y posición si quieres)
+        $logopath = $CFG->dirroot . '/local/recibeexamen/pix/udima_logo.png';
+        if (file_exists($logopath)) {
+            $pdf->Image($logopath, 15, 10, 30);
+        }
+
+        // Contenido HTML del justificante
+        $fecha = userdate(time(), '%d de %B de %Y');
+        $html = '
+        <style>
+            .title { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 20px; }
+            .text { font-size: 12pt; text-align: justify; }
+            .info { font-size: 11pt; }
+            .footer { font-size: 9pt; text-align: center; margin-top: 50px; }
+        </style>
+
+        <div class="title">JUSTIFICANTE DE ASISTENCIA A EXAMEN</div>
+
+        <div class="text">
+            Collado Villalba, a ' . $fecha . '<br><br>
+
+            D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . ($user->idnumber ?? 'N/D') . '</strong>,
+            matriculado/a en esta Universidad en estudios universitarios conducentes a una titulación oficial, ha asistido a
+            la realización del examen convocado por la Universidad a Distancia de Madrid, en la fecha, hora y sede que figura
+            a continuación, expidiéndose a petición del interesado el presente certificado a los efectos oportunos.
+        </div><br>
+
+        <div class="info">
+            <strong>Información relativa al examen:</strong><br><br>
+            <strong>Código examen:</strong> ' . $params['asscodnum'] . '<br>
+            <strong>Titulación:</strong> [126] Grado en Magisterio de Educación Primaria<br>
+            <strong>Asignatura:</strong> ' . $assign->name . '<br>
+            <strong>Fecha y hora de inicio:</strong> ' . $fecha . ' 20:30 EUROPE/MADRID<br>
+            <strong>Fecha y hora de finalización:</strong> ' . $fecha . ' 21:45 EUROPE/MADRID<br>
+            <strong>Sede:</strong> on-line.
+        </div><br><br>
+
+        <div class="text">Firma y sello</div><br><br>
+        ';
+
+        // Escribir el HTML
+        $pdf->SetFont('helvetica', '', 12);
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        // Añadir firma (opcional)
+        $firmapath = $CFG->dirroot . '/local/recibeexamen/pix/firma.png';
+        if (file_exists($firmapath)) {
+            $pdf->Image($firmapath, 20, $pdf->GetY(), 50);
+        }
+
+        // Pie de página
+        $pdf->Ln(40);
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->MultiCell(0, 10, "Carretera de La Coruña, km 38,500 (vía de servicio, n.º 15) • 28400 Collado Villalba (Madrid) • 902 02 00 03\nwww.udima.es • informa@udima.es", 0, 'C');
+
+        // Guardar PDF en temporal
+        $filename = "justificante_{$user->username}.pdf";
         $tempdir = make_temp_directory('local_recibeexamen');
-        $pdfpath = $tempdir . "/justificante_{$user->username}.pdf";
+        $pdfpath = $tempdir . '/' . $filename;
         $pdf->Output($pdfpath, 'F');
 
-        // Preparar el archivo adjunto
-        $attachment = $pdfpath;
-        $attachname = "justificante_{$user->username}.pdf";
-
-        // Generar el asunto y cuerpo del mensaje
+        // Enviar correo
         $subject = "Justificante - {$user->username}";
-        $message = "Estimado/a {$user->username},\n\nEste es su justificante generado automáticamente.\n\n";
-        $message .= "Saludos cordiales.";
+        $message = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen.\n\nSaludos cordiales.";
 
-        // Enviar correo al usuario con el archivo adjunto
+        // Enviar correo con adjunto
         $emailresult = email_to_user(
-            $user, 
-            core_user::get_support_user(), 
-            $subject, 
-            $message, 
-            $message, 
-            $attachment, 
-            $attachname
+            $user,
+            core_user::get_support_user(),
+            $subject,
+            $message,
+            $message,
+            $pdfpath,
+            $filename
         );
 
         if (!$emailresult) {
             throw new moodle_exception('errorcannotemail', 'local_recibeexamen');
         }
 
-        // Eliminar el archivo temporal después de enviarlo
-        unlink($pdfpath);
+        // Eliminar temporal
+        @unlink($pdfpath);
+
 
         return [
             'status'       => 'success',
