@@ -15,18 +15,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version metadata for the local_recibeexamen plugin.
+ * Event observers for Recibe Examen
  *
- * @package   local_recibeexamen
- * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    local_recibeexamen
+ * @category   event
+ * @copyright  2025 YOUR NAME <your@email.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2025041000;
-$plugin->requires = 2014051206;
-$plugin->component = 'local_recibeexamen';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v0.0.1';
-
+$observers = [
+    [
+        'eventname'   => '\mod_quiz\event\attempt_submitted',
+        'callback'    => '\local_recibeexamen\observer::quiz_attempt_submitted',
+    ],
+];

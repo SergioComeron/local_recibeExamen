@@ -22,3 +22,27 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+ defined('MOODLE_INTERNAL') || die();
+
+ function local_recibeexamen_mod_quiz_mod_form($formwrapper, MoodleQuickForm $mform) {
+     $mform->addElement('advcheckbox', 'sendreceipt', get_string('sendreceipt', 'local_recibeexamen'));
+     $mform->addHelpButton('sendreceipt', 'sendreceipt', 'local_recibeexamen');
+     $mform->setDefault('sendreceipt', 0);
+ }
+
+ function local_recibeexamen_mod_quiz_after_save($formwrapper, stdClass $data, stdClass $course) {
+    global $DB;
+
+    // Guardamos en una tabla propia si la casilla está marcada.
+    $record = new stdClass();
+    $record->quizid = $data->instance;
+    $record->sendreceipt = !empty($data->sendreceipt) ? 1 : 0;
+
+    // Actualizamos si ya existe, o insertamos.
+    if ($existing = $DB->get_record('local_recibeexamen_quizzes', ['quizid' => $data->instance])) {
+        $record->id = $existing->id;
+        $DB->update_record('local_recibeexamen_quizzes', $record);
+    } else {
+        $DB->insert_record('local_recibeexamen_quizzes', $record);
+    }
+}

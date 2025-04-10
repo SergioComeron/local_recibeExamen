@@ -38,3 +38,7 @@ Tu examen para el curso "{coursename}" ha sido recibido correctamente. La tarea 
 
 Gracias.';
 $string['errorcannotemail'] = 'No se pudo enviar el correo electrónico al usuario.';
+$string['sendreceipt'] = 'Enviar justificante al finalizar';
+$string['sendreceipt_help'] = 'Si se marca esta casilla, se enviará un justificante automáticamente cuando el estudiante termine este cuestionario.';
+
+
