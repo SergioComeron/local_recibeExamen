@@ -206,7 +206,7 @@ class local_recibeexamen_external extends external_api {
             $uploadedfile = $_FILES['pdfdata'];
             $fs = get_file_storage();
             $context = context_module::instance($cmid);
-            $filename = 'examen_' . time() . '.pdf';
+            $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '.pdf';
     
             if (!file_exists($uploadedfile['tmp_name'])) {
                 throw new moodle_exception('Error: El archivo temporal no existe.');
@@ -308,7 +308,7 @@ class local_recibeexamen_external extends external_api {
         <div class="text">
             Collado Villalba, a ' . $fecha . '<br><br>
 
-            D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . (obtener_numdocumento_ldap($user->username) ?? 'N/D') . '</strong>,
+            D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . $dniprs  . '</strong>,
             matriculado/a en esta Universidad en estudios universitarios conducentes a una titulación oficial, ha asistido a
             la realización del examen convocado por la Universidad a Distancia de Madrid, en la fecha, hora y sede que figura
             a continuación, expidiéndose a petición del interesado el presente certificado a los efectos oportunos.
@@ -350,15 +350,18 @@ class local_recibeexamen_external extends external_api {
 
         // Enviar correo
         $subject = "Justificante - {$user->username}";
-        $message = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen.\n\nSaludos cordiales.";
+
+        // Preparar mensajes para texto plano y HTML.
+        $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen.\n\nSaludos cordiales.";
+        $message_html = nl2br($message_plain);
 
         // Enviar correo con adjunto
         $emailresult = email_to_user(
             $user,
             core_user::get_support_user(),
             $subject,
-            $message,
-            $message,
+            $message_plain,
+            $message_html,
             $pdfpath,
             $filename
         );
