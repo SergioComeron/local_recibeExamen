@@ -29,19 +29,30 @@ function xmldb_local_recibeexamen_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2025031200) {
+    
 
-        // Define field pdfname to be added to recibeexamen_exams.
-        $table = new xmldb_table('recibeexamen_exams');
-        $field = new xmldb_field('pdfname', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'examdata');
+    if ($oldversion < 2025042002) { // Usa un número de versión único
+        // Crear tabla local_recibeexamen_queue según install.xml
+        $table = new xmldb_table('local_recibeexamen_queue');
 
-        // Conditionally launch add field pdfname.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
+        // Añadir campos
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null);
+        $table->add_field('data', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null, 'Datos JSON con info del examen');
+        $table->add_field('filename', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('filepath', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('status', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'pending');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null);
+
+        // Añadir clave primaria
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+
+        // Crear la tabla si no existe
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
         }
-
-        // Recibeexamen savepoint reached.
-        upgrade_plugin_savepoint(true, 2025031200, 'local', 'recibeexamen');
+        upgrade_plugin_savepoint(true, 2025042002, 'local', 'recibeexamen');
     }
 
     return true;
