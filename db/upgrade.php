@@ -29,8 +29,6 @@ function xmldb_local_recibeexamen_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    
-
     if ($oldversion < 2025042002) { // Usa un número de versión único
         // Crear tabla local_recibeexamen_queue según install.xml
         $table = new xmldb_table('local_recibeexamen_queue');

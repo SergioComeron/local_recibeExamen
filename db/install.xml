@@ -3,17 +3,6 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>
-    <TABLE NAME="local_recibeexamen_quizzes" COMMENT="Configuración de justificantes para quizzes" NEXT="0">
-        <FIELDS>
-            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="ID"/>
-            <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID del cuestionario"/>
-            <FIELD NAME="sendreceipt" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 si debe enviar justificante"/>
-        </FIELDS>
-        <KEYS>
-            <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-            <KEY NAME="quizid_unique" TYPE="unique" FIELDS="quizid"/>
-        </KEYS>
-    </TABLE>
     <TABLE NAME="local_recibeexamen_queue" COMMENT="Cola de exámenes recibidos para procesar en segundo plano">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
