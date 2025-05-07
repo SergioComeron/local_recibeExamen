@@ -58,7 +58,7 @@ class local_recibeexamen_external extends external_api {
             throw new moodle_exception('nofileuploaded', 'local_recibeexamen');
         }
 
-        if ($_FILES['pdfdata']['size'] > 10485760) { // 10 MB
+        if ($_FILES['pdfdata']['size'] > 104857600) { // 100 MB
             throw new moodle_exception('filetoobig', 'local_recibeexamen');
         }
 
