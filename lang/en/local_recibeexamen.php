@@ -37,8 +37,12 @@ $string['examreceivedmessage'] = 'Hola {username},
 Tu examen para el curso "{coursename}" ha sido recibido correctamente. La tarea asociada es "{assignname}".
 
 Gracias.';
-$string['errorcannotemail'] = 'No se pudo enviar el correo electrónico al usuario.';
-$string['sendreceipt'] = 'Enviar justificante al finalizar';
-$string['sendreceipt_help'] = 'Si se marca esta casilla, se enviará un justificante automáticamente cuando el estudiante termine este cuestionario.';
+$string['errorcannotemail'] = 'Failed to send email to the user.';
+$string['sendreceipt'] = 'Send receipt upon completion';
+$string['sendreceipt_help'] = 'If checked, a receipt will be sent automatically when the student completes this quiz.';
+$string['enable_studentsend'] = 'Allow receipt of submissions for students';
+$string['enable_studentsend_desc'] = 'If enabled, students will be able to receive submissions through this plugin.';
+$string['justificante_email'] = 'Receipt email';
+$string['justificante_email_desc'] = 'Email address to which the receipts sent by the students will be delivered.';
 
 

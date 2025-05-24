@@ -22,4 +22,24 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+if ($hassiteconfig) {
+    $settings = new admin_settingpage('local_recibeexamen', get_string('pluginname', 'local_recibeexamen'));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_recibeexamen/enable_studentsend',
+        get_string('enable_studentsend', 'local_recibeexamen'),
+        get_string('enable_studentsend_desc', 'local_recibeexamen'),
+        1
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_recibeexamen/justificante_email',
+        get_string('justificante_email', 'local_recibeexamen'),
+        get_string('justificante_email_desc', 'local_recibeexamen'),
+        ''
+    ));
+
+    $ADMIN->add('localplugins', $settings);
+}
+
 
