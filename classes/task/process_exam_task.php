@@ -344,20 +344,60 @@ class process_exam_task extends \core\task\adhoc_task {
             $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen que se realizó en la fecha: " . $fechainicio . " en la sede: " . $sede . ".\n\nSaludos cordiales.";
             $message_html = nl2br($message_plain);
 
-            // Enviar correo con adjunto
-            $emailresult = email_to_user(
-                $user,
-                \core_user::get_support_user(), // Aseguramos el namespace global
-                $subject,
-                $message_plain,
-                $message_html,
-                $pdfpath,
-                $filename
-            );
+            $justificante_email = get_config('local_recibeexamen', 'justificante_email');
+            $enable_studentsend = get_config('local_recibeexamen', 'enable_studentsend');
 
-            if (!$emailresult) {
-                throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
+
+            if (empty($justificante_email)) {
+                throw new \moodle_exception('justificante_email_not_set', 'local_recibeexamen');
             }
+            // Construyes el “usuario fantasma” para la copia
+            $copiato = (object)[
+                'id'                => -99,          // cualquier número negativo
+                'email'             => $justificante_email, // el email del destinatario externo
+                'firstname'         => 'Copia',      // vale con un alias
+                'lastname'          => 'Justificantes',
+                'username'          => 'justificante',
+                'maildisplay'       => 1,         // permite que salga el “reply-to” real
+                'mailformat'        => 1,            // 1 = HTML
+                'emailstop'         => 0,
+            ];
+
+            // 5. Envías la misma notificación al destinatario externo
+            $emailcopiaresult = email_to_user(
+                    $copiato,
+                    \core_user::get_support_user(), // Aseguramos el namespace global
+                    $subject,
+                    $message_plain,
+                    $message_html,
+                    $pdfpath,
+                    $filename
+                );
+
+                if (!$emailcopiaresult) {
+                    debugging('No se pudo enviar el correo al usuario fantasma', DEBUG_DEVELOPER);
+                    throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
+                }
+
+            if ($enable_studentsend == 1) {
+                // Enviar correo con adjunto
+                $emailresult = email_to_user(
+                    $user,
+                    \core_user::get_support_user(), // Aseguramos el namespace global
+                    $subject,
+                    $message_plain,
+                    $message_html,
+                    $pdfpath,
+                    $filename
+                );
+
+                if (!$emailresult) {
+                    throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
+                }
+            }
+
+
+
 
             // Eliminar temporal
             @unlink($pdfpath);
