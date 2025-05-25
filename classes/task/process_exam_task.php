@@ -367,7 +367,7 @@ class process_exam_task extends \core\task\adhoc_task {
             $emailcopiaresult = email_to_user(
                     $copiato,
                     \core_user::get_support_user(), // Aseguramos el namespace global
-                    $subject,
+                    $subject. ' - Copia '. fullname($user),
                     $message_plain,
                     $message_html,
                     $pdfpath,
