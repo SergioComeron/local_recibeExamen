@@ -297,7 +297,7 @@ class process_exam_task extends \core\task\adhoc_task {
             <div class="text">
                 Collado Villalba, a ' . $fecha . '<br><br>
 
-                D/Dª <strong>' . fullname($user) . '</strong> con Número de Documento de Identificación: <strong>' . $dniprs  . '</strong>,
+                D/Dª <strong>' . $user->firstname . ' ' . $user->lastname . '</strong> con Número de Documento de Identificación: <strong>' . $dniprs  . '</strong>,
                 matriculado/a en esta Universidad en estudios universitarios conducentes a una titulación oficial, ha asistido a
                 la realización del examen convocado por la Universidad a Distancia de Madrid, en la fecha, hora y sede que figura
                 a continuación, expidiéndose a petición del interesado el presente certificado a los efectos oportunos.
