@@ -361,6 +361,10 @@ class process_exam_task extends \core\task\adhoc_task {
                 'maildisplay'       => 1,         // permite que salga el “reply-to” real
                 'mailformat'        => 1,            // 1 = HTML
                 'emailstop'         => 0,
+                'firstnamephonetic' => '',
+                'lastnamephonetic'  => '',
+                'middlename'        => '',
+                'alternatename'     => '',
             ];
 
             // 5. Envías la misma notificación al destinatario externo
