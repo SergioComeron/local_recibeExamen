@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['courseid'] = 'Courseid';
+$string['id'] = 'Id';
+$string['list'] = 'List';
 $string['pluginname'] = 'Recibe Examen';
 $string['recibeexamen'] = 'Recibe Examen';
 $string['recibeexamen:addinstance'] = 'Add a new Recibe Examen block';
@@ -44,5 +47,8 @@ $string['enable_studentsend'] = 'Allow receipt of submissions for students';
 $string['enable_studentsend_desc'] = 'If enabled, students will be able to receive submissions through this plugin.';
 $string['justificante_email'] = 'Receipt email';
 $string['justificante_email_desc'] = 'Email address to which the receipts sent by the students will be delivered.';
+$string['status'] = 'Status';
+$string['timecreated'] = 'Timecreated';
+$string['userid'] = 'Userid';
 
 
