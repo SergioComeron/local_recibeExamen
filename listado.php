@@ -1,5 +1,3 @@
-userdate($entry->timecreated)
-
 <?php
 // This file is part of Moodle - http://moodle.org/
 //
@@ -26,44 +24,73 @@ userdate($entry->timecreated)
 
 require('../../config.php');
 require_once('recibeexamen_queue_table.php');
-require_login();
-
-$url = new moodle_url('/local/recibeexamen/listado.php', []);
-$PAGE->set_url($url);
-$PAGE->set_context(context_system::instance());
-
-$PAGE->set_heading(get_string('list', 'local_recibeexamen'));
 require_once($CFG->libdir . '/tablelib.php');
 
-$table = new recibeexamen_queue_table('recibeexamen_queue_table');
-$table->define_baseurl($PAGE->url);
+require_login();
 
-$total = $DB->count_records('local_recibeexamen_queue');
-$table->pagesize(20, $total);
-
-$table->setup();
-$sort = $table->get_sql_sort();
-if (empty($sort)) {
-    $sort = "id DESC";
-}
-
-$fields = 'id, userid, data, filename, filepath, status, timecreated, timemodified';
-$entries = $DB->get_records_sql("SELECT $fields FROM {local_recibeexamen_queue} ORDER BY $sort", null, $table->get_page_start(), $table->get_page_size());
-
-foreach ($entries as $entry) {
-    $row = [
-        $entry->id,
-        $entry->userid,
-        $entry->courseid,
-        $entry->status,
-    ];
-    $table->add_data($row);
-}
-
-ob_start();
-$table = new recibeexamen_queue_table('recibeexamen_queue_table');
+$url = new moodle_url('/local/recibeexamen/listado.php');
+$PAGE->set_url($url);
+$PAGE->set_context(context_system::instance());
+$PAGE->set_title(get_string('list', 'local_recibeexamen'));
+$PAGE->set_heading(get_string('list', 'local_recibeexamen'));
 
 echo $OUTPUT->header();
+
+// Crear instancia de la tabla.
+$table = new mod_recibeexamen_queue_table('recibeexamen_queue_table');
+$table->define_baseurl($PAGE->url);
+$table->setup(); // <-- ¡Primero hay que llamar a setup!
+
+global $DB;
+
+// Total de registros.
+$total = $DB->count_records('local_recibeexamen_queue');
+
+// Parámetros de paginación.
+$page = optional_param('page', 0, PARAM_INT);
+
+// Comprobar ordenación.
+$sort = $table->get_sql_sort();
+$sqlorder = $sort ? "ORDER BY $sort" : "ORDER BY id DESC";
+
+// Obtener los registros.
+$sql = "SELECT id, userid, status, filename, data, timecreated
+        FROM {local_recibeexamen_queue}
+        $sqlorder";
+
+$records = $DB->get_records_sql($sql, null, $page * 10, 10);
+
+// Configurar paginación y mostrar tabla.
+$table->pagesize(10, $total);
+// table->setup() ya se ha llamado arriba, así que no lo repitas aquí.
+
+foreach ($records as $record) {
+    $data = json_decode($record->data, true);
+
+    $userlink = '-';
+    if ($record->userid) {
+        $userurl = new moodle_url('/user/view.php', ['id' => $record->userid]);
+        $userlink = html_writer::link($userurl, $data['idusuldap'] ?? '(sin nombre)');
+    }
+
+    $resendurl = new moodle_url('/local/recibeexamen/resend.php', ['id' => $record->id]);
+    $acciones = html_writer::link($resendurl, '🔁 Reenviar', ['class' => 'btn btn-secondary']);
+
+    $table->add_data([
+        $record->id,
+        $userlink,
+        $data['exacodnum'] ?? '-',
+        $data['assnomid1'] ?? '-',
+        $data['planomid1'] ?? '-',
+        $record->status ?? '-',
+        $record->filename ?? '-',
+        $data['fechainicio'] ?? '-',
+        $data['fechafin'] ?? '-',
+        userdate($record->timecreated) ?? '-',
+        $acciones,
+    ]);
+}
+
+$table->finish_output();
+
 echo $OUTPUT->footer();
-
-

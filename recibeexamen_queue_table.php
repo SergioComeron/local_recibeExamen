@@ -22,25 +22,47 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+
 defined('MOODLE_INTERNAL') || die();
+
 require_once($CFG->libdir . '/tablelib.php');
-require_once($CFG->libdir.'/adminlib.php');
 
 /**
- * Extend the standard table class for jitsi.
+ * Tabla para listar registros de local_recibeexamen_queue.
  */
+class mod_recibeexamen_queue_table extends flexible_table {
 
-class recibeexamen_queue_table extends flexible_table {
     public function __construct($uniqueid) {
         parent::__construct($uniqueid);
 
-        $this->define_columns(['id', 'userid', 'courseid', 'status', 'timecreated']);
+        // Define columnas de la tabla.
+        $this->define_columns([
+            'id',
+            'idusuldap',
+            'exacodnum',
+            'assnomid1',
+            'planomid1',
+            'status',
+            'filename',
+            'fechainicio',
+            'fechafin',
+            'timecreated',
+            'acciones',
+        ]);
+
+        // Define cabeceras.
         $this->define_headers([
-            get_string('id', 'local_recibeexamen'),
-            get_string('userid', 'local_recibeexamen'),
-            get_string('courseid', 'local_recibeexamen'),
-            get_string('status', 'local_recibeexamen'),
-            get_string('timecreated', 'local_recibeexamen')
+            'ID',
+            'Usuario',
+            'Código Examen',
+            'Asignatura',
+            'Plan',
+            'Estado',
+            'Archivo',
+            'Fecha Inicio',
+            'Fecha Fin',
+            'Fecha de creación',
+            'Acciones',
         ]);
 
         $this->sortable(true, 'id', SORT_DESC);
@@ -48,4 +70,59 @@ class recibeexamen_queue_table extends flexible_table {
         $this->set_attribute('class', 'generaltable generalbox');
         $this->pageable(true);
     }
+
+    public function col_acciones($row) {
+       $url = new moodle_url('/local/recibeexamen/resend.php', ['id' => $row->id]);
+        return html_writer::link($url, '🔁 Reenviar', ['class' => 'btn btn-secondary']);
+    }
+
+
+    /**
+     * Convierte cada fila en columnas visibles.
+     */
+    // public function col_idusuldap($row) {
+    //     return $this->get_data_field($row, 'idusuldap');
+    // }
+
+    // public function col_exacodnum($row) {
+    //     return $this->get_data_field($row, 'exacodnum');
+    // }
+
+    // public function col_assnomid1($row) {
+    //     return $this->get_data_field($row, 'assnomid1');
+    // }
+
+    // public function col_planomid1($row) {
+    //     return $this->get_data_field($row, 'planomid1');
+    // }
+
+    // public function col_fechainicio($row) {
+    //     $value = $this->get_data_field($row, 'fechainicio');
+    //     return $value ? $value : '-';
+    // }
+
+    // public function col_fechafin($row) {
+    //     $value = $this->get_data_field($row, 'fechafin');
+    //     return $value ? $value : '-';
+    // }
+
+    // public function col_filename($row) {
+    //     return property_exists($row, 'filename') ? $row->filename : '-';
+    // }
+
+    // public function col_timecreated($row) {
+    //     return 'fecha'.userdate($row->timecreated);
+    // }
+
+    /**
+     * Extrae un campo del JSON `data`.
+     */
+    // protected function get_data_field($row, $fieldname) {
+    //     if (!property_exists($row, 'data')) {
+    //         return '-';
+    //     }
+
+    //     $data = json_decode($row->data, true);
+    //     return isset($data[$fieldname]) ? s($data[$fieldname]) : '-';
+    // }
 }

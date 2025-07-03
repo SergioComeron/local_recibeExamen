@@ -25,8 +25,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['courseid'] = 'Courseid';
+$string['entrynotfound'] = 'Entrynotfound';
+$string['errormissingcoursemodule'] = 'Errormissingcoursemodule';
+$string['errormissingqueue'] = 'Errormissingqueue';
 $string['id'] = 'Id';
+$string['justificante_email_not_set'] = 'Justificante email not set';
 $string['list'] = 'List';
+$string['missingqueueid'] = 'Missingqueueid';
 $string['pluginname'] = 'Recibe Examen';
 $string['recibeexamen'] = 'Recibe Examen';
 $string['recibeexamen:addinstance'] = 'Add a new Recibe Examen block';
@@ -50,5 +55,6 @@ $string['justificante_email_desc'] = 'Email address to which the receipts sent b
 $string['status'] = 'Status';
 $string['timecreated'] = 'Timecreated';
 $string['userid'] = 'Userid';
+$string['usernotfound'] = 'Usernotfound';
 
 
