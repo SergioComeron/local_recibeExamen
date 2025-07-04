@@ -25,8 +25,14 @@
 require('../../config.php');
 require_once('recibeexamen_queue_table.php');
 require_once($CFG->libdir . '/tablelib.php');
+require_once($CFG->libdir . '/formslib.php');
 
 require_login();
+
+// Obtener parámetro de búsqueda.
+$searchuser = optional_param('searchuser', '', PARAM_TEXT);
+// Obtener parámetro de búsqueda por código de examen.
+$searchexam = optional_param('searchexam', '', PARAM_TEXT);
 
 $url = new moodle_url('/local/recibeexamen/listado.php');
 $PAGE->set_url($url);
@@ -36,6 +42,18 @@ $PAGE->set_heading(get_string('list', 'local_recibeexamen'));
 
 echo $OUTPUT->header();
 
+$mform = new MoodleQuickForm('searchform', 'get', $PAGE->url);
+$mform->addElement('text', 'searchuser', get_string('searchuser', 'local_recibeexamen'));
+$mform->setType('searchuser', PARAM_TEXT);
+$mform->setDefault('searchuser', $searchuser);
+
+$mform->addElement('text', 'searchexam', get_string('searchexam', 'local_recibeexamen'));
+$mform->setType('searchexam', PARAM_TEXT);
+$mform->setDefault('searchexam', $searchexam);
+
+$mform->addElement('submit', 'submitbutton', get_string('search', 'local_recibeexamen'));
+$mform->display();
+
 // Crear instancia de la tabla.
 $table = new mod_recibeexamen_queue_table('recibeexamen_queue_table');
 $table->define_baseurl($PAGE->url);
@@ -43,8 +61,23 @@ $table->setup(); // <-- ¡Primero hay que llamar a setup!
 
 global $DB;
 
-// Total de registros.
-$total = $DB->count_records('local_recibeexamen_queue');
+// Inicializar parámetros
+$where = [];
+$params = [];
+if (!empty($searchuser)) {
+    $where[] = "data::jsonb ->> 'idusuldap' ILIKE :searchuser";
+    $params['searchuser'] = '%' . $searchuser . '%';
+}
+if (!empty($searchexam)) {
+    $where[] = "data::jsonb ->> 'exacodnum' ILIKE :searchexam";
+    $params['searchexam'] = '%' . $searchexam . '%';
+}
+$whereclause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+if (!empty($whereclause)) {
+    $total = $DB->count_records_sql("SELECT COUNT(*) FROM {local_recibeexamen_queue} $whereclause", $params);
+} else {
+    $total = $DB->count_records('local_recibeexamen_queue');
+}
 
 // Parámetros de paginación.
 $page = optional_param('page', 0, PARAM_INT);
@@ -53,12 +86,13 @@ $page = optional_param('page', 0, PARAM_INT);
 $sort = $table->get_sql_sort();
 $sqlorder = $sort ? "ORDER BY $sort" : "ORDER BY id DESC";
 
-// Obtener los registros.
+// Reutilizar $whereclause y $params para la consulta
 $sql = "SELECT id, userid, status, filename, data, timecreated
         FROM {local_recibeexamen_queue}
+        $whereclause
         $sqlorder";
 
-$records = $DB->get_records_sql($sql, null, $page * 10, 10);
+$records = $DB->get_records_sql($sql, $params, $page * 10, 10);
 
 // Configurar paginación y mostrar tabla.
 $table->pagesize(10, $total);

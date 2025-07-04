@@ -46,6 +46,9 @@ Tu examen para el curso "{coursename}" ha sido recibido correctamente. La tarea 
 
 Gracias.';
 $string['errorcannotemail'] = 'Failed to send email to the user.';
+$string['search'] = 'Search';
+$string['searchexam'] = 'Searchexam';
+$string['searchuser'] = 'Searchuser';
 $string['sendreceipt'] = 'Send receipt upon completion';
 $string['sendreceipt_help'] = 'If checked, a receipt will be sent automatically when the student completes this quiz.';
 $string['enable_studentsend'] = 'Allow receipt of submissions for students';
