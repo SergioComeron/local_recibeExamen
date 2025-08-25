@@ -46,6 +46,8 @@ Tu examen para el curso "{coursename}" ha sido recibido correctamente. La tarea 
 
 Gracias.';
 $string['errorcannotemail'] = 'Failed to send email to the user.';
+$string['recibeexamen:resendjustificantes'] = 'Resend receipts';
+$string['recibeexamen:viewqueue'] = 'View list page';
 $string['search'] = 'Search';
 $string['searchexam'] = 'Searchexam';
 $string['searchuser'] = 'Searchuser';

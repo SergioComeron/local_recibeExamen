@@ -24,9 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2025052600;
+$plugin->version = 2025082501;
 $plugin->requires = 2014051206;
 $plugin->component = 'local_recibeexamen';
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v0.0.1';
+$plugin->release = 'v1.0';
 
