@@ -215,14 +215,45 @@ foreach ($records as $record) {
     // Verificar capacidad para reenviar justificantes.
     if (has_capability('local/recibeexamen:resendjustificantes', context_system::instance())) {
         $resendurl = new moodle_url('/local/recibeexamen/resend.php', ['id' => $record->id]);
-        $acciones = html_writer::link($resendurl, 'Enviar', ['class' => 'btn btn-secondary']);
+        $acciones = html_writer::link($resendurl, 'Enviar', ['class' => 'btn btn-secondary btn-sm']);
     } else {
         $acciones = html_writer::tag('button', 'Enviar', [
-            'class' => 'btn btn-secondary',
+            'class' => 'btn btn-secondary btn-sm',
             'disabled' => 'disabled',
             'title' => get_string('nopermissions', 'error')
         ]);
     }
+
+    // Botón para mostrar datos JSON
+    $data_formatted = json_encode($data, JSON_PRETTY_PRINT);
+    $data_button = '<button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#dataModal' . $record->id . '">
+        <i class="fa fa-eye"></i> Ver datos
+    </button>';
+    
+    // Modal para mostrar los datos
+    $modal = '
+    <div class="modal fade" id="dataModal' . $record->id . '" tabindex="-1" role="dialog" aria-labelledby="dataModalLabel' . $record->id . '">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dataModalLabel' . $record->id . '">Datos JSON - ID: ' . $record->id . '</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">' . 
+                    htmlspecialchars($data_formatted) . '</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>';
+
+    // Combinar acciones
+    $acciones_completas = $acciones . ' ' . $data_button . $modal;
 
     $table->add_data([
         $record->id,
@@ -235,7 +266,7 @@ foreach ($records as $record) {
         $data['fechainicio'] ?? '-',
         $data['fechafin'] ?? '-',
         userdate($record->timecreated) ?? '-',
-        $acciones,
+        $acciones_completas,
     ]);
 }
 
