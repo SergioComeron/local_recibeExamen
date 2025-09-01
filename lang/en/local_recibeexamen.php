@@ -61,5 +61,20 @@ $string['status'] = 'Status';
 $string['timecreated'] = 'Timecreated';
 $string['userid'] = 'Userid';
 $string['usernotfound'] = 'Usernotfound';
+$string['statistics'] = 'Statistics';
+$string['general_stats'] = 'General Statistics';
+$string['time_stats'] = 'Time Statistics';
+$string['frequent_exams'] = 'Most Frequent Exams';
+$string['total_exams'] = 'Total exams';
+$string['pending_exams'] = 'Pending';
+$string['processed_exams'] = 'Completed';
+$string['error_exams'] = 'Failed';
+$string['today_exams'] = 'Today';
+$string['last_week_exams'] = 'Last week';
+$string['times'] = 'times';
+$string['no_data'] = 'No data available';
+$string['completed'] = 'completed';
+$string['pending'] = 'pending';
+$string['failed'] = 'failed';
 
 

@@ -18,7 +18,7 @@
  * TODO describe file listado
  *
  * @package    local_recibeexamen
- * @copyright  2025 YOUR NAME <your@email.com>
+ * @copyright  2025 Sergio Comerón <sergio.comeron@udima.es>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -43,6 +43,110 @@ $PAGE->set_heading(get_string('list', 'local_recibeexamen'));
 
 echo $OUTPUT->header();
 
+// Agregar sección de estadísticas
+echo $OUTPUT->heading(get_string('statistics', 'local_recibeexamen'), 3);
+
+// Obtener estadísticas generales
+$stats = [];
+$stats['total'] = $DB->count_records('local_recibeexamen_queue');
+$stats['pending'] = $DB->count_records('local_recibeexamen_queue', ['status' => '']); // O el valor por defecto que uses
+$stats['processed'] = $DB->count_records('local_recibeexamen_queue', ['status' => 'done']);
+$stats['error'] = $DB->count_records('local_recibeexamen_queue', ['status' => 'failed']);
+
+// Estadísticas por fecha (últimos 7 días)
+$weekago = time() - (7 * 24 * 60 * 60);
+$stats['last_week'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ?', [$weekago]);
+
+// Estadísticas por día de hoy
+$today_start = strtotime('today');
+$today_end = strtotime('tomorrow') - 1;
+$stats['today'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ?', [$today_start, $today_end]);
+$stats['today_done'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'done']);
+$stats['today_failed'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'failed']);
+$stats['today_pending'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND (status = ? OR status IS NULL)', [$today_start, $today_end, '']);
+
+// Estadísticas de la semana pasada también con desglose
+$weekago = time() - (7 * 24 * 60 * 60);
+$stats['last_week'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ?', [$weekago]);
+$stats['last_week_done'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND status = ?', [$weekago, 'done']);
+$stats['last_week_failed'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND status = ?', [$weekago, 'failed']);
+$stats['last_week_pending'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND (status = ? OR status IS NULL)', [$weekago, '']);
+
+// Obtener los exámenes más frecuentes
+$frequent_exams_sql = "
+    SELECT data::jsonb ->> 'exacodnum' as exam_code, COUNT(*) as count
+    FROM {local_recibeexamen_queue} 
+    WHERE data::jsonb ->> 'exacodnum' IS NOT NULL 
+    GROUP BY data::jsonb ->> 'exacodnum' 
+    ORDER BY count DESC 
+    LIMIT 5
+";
+$frequent_exams = $DB->get_records_sql($frequent_exams_sql);
+
+// Mostrar estadísticas en cards
+echo '<div class="row mb-3">';
+
+// Card 1: Estadísticas generales
+echo '<div class="col-md-6 col-lg-3 mb-3">';
+echo '<div class="card border-primary">';
+echo '<div class="card-header bg-primary text-white"><strong>' . get_string('general_stats', 'local_recibeexamen') . '</strong></div>';
+echo '<div class="card-body">';
+echo '<p><strong>' . get_string('total_exams', 'local_recibeexamen') . ':</strong> ' . $stats['total'] . '</p>';
+echo '<p><strong>' . get_string('pending_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-warning">' . $stats['pending'] . '</span></p>';
+echo '<p><strong>' . get_string('processed_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-success">' . $stats['processed'] . '</span></p>';
+echo '<p><strong>' . get_string('error_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-danger">' . $stats['error'] . '</span></p>';
+echo '</div>';
+echo '</div>';
+echo '</div>';
+
+// Card 2: Estadísticas temporales - ACTUALIZADO
+echo '<div class="col-md-6 col-lg-3 mb-3">';
+echo '<div class="card border-info">';
+echo '<div class="card-header bg-info text-white"><strong>' . get_string('time_stats', 'local_recibeexamen') . '</strong></div>';
+echo '<div class="card-body">';
+echo '<p><strong>' . get_string('today_exams', 'local_recibeexamen') . ':</strong> ' . $stats['today'] . '</p>';
+echo '<div style="margin-left: 15px; font-size: 0.9em;">';
+echo '<span class="badge badge-success">' . $stats['today_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
+echo '<span class="badge badge-warning">' . $stats['today_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
+echo '<span class="badge badge-danger">' . $stats['today_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
+echo '</div>';
+echo '<hr style="margin: 10px 0;">';
+echo '<p><strong>' . get_string('last_week_exams', 'local_recibeexamen') . ':</strong> ' . $stats['last_week'] . '</p>';
+echo '<div style="margin-left: 15px; font-size: 0.9em;">';
+echo '<span class="badge badge-success">' . $stats['last_week_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
+echo '<span class="badge badge-warning">' . $stats['last_week_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
+echo '<span class="badge badge-danger">' . $stats['last_week_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
+echo '</div>';
+echo '</div>';
+echo '</div>';
+echo '</div>';
+
+// Card 3: Exámenes más frecuentes
+echo '<div class="col-md-12 col-lg-6 mb-3">';
+echo '<div class="card border-success">';
+echo '<div class="card-header bg-success text-white"><strong>' . get_string('frequent_exams', 'local_recibeexamen') . '</strong></div>';
+echo '<div class="card-body">';
+if ($frequent_exams) {
+    echo '<ul class="list-unstyled">';
+    foreach ($frequent_exams as $exam) {
+        if (!empty($exam->exam_code)) {
+            echo '<li><strong>' . s($exam->exam_code) . ':</strong> ' . $exam->count . ' ' . get_string('times', 'local_recibeexamen') . '</li>';
+        }
+    }
+    echo '</ul>';
+} else {
+    echo '<p>' . get_string('no_data', 'local_recibeexamen') . '</p>';
+}
+echo '</div>';
+echo '</div>';
+echo '</div>';
+
+echo '</div>'; // Cierre del row
+
+// Separador
+echo '<hr>';
+
+// Formulario de búsqueda
 $mform = new MoodleQuickForm('searchform', 'get', $PAGE->url);
 $mform->addElement('text', 'searchuser', get_string('searchuser', 'local_recibeexamen'));
 $mform->setType('searchuser', PARAM_TEXT);
