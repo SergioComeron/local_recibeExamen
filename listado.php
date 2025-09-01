@@ -215,9 +215,9 @@ foreach ($records as $record) {
     // Verificar capacidad para reenviar justificantes.
     if (has_capability('local/recibeexamen:resendjustificantes', context_system::instance())) {
         $resendurl = new moodle_url('/local/recibeexamen/resend.php', ['id' => $record->id]);
-        $acciones = html_writer::link($resendurl, '🔁 Reenviar', ['class' => 'btn btn-secondary']);
+        $acciones = html_writer::link($resendurl, 'Enviar', ['class' => 'btn btn-secondary']);
     } else {
-        $acciones = html_writer::tag('button', '🔁 Reenviar', [
+        $acciones = html_writer::tag('button', 'Enviar', [
             'class' => 'btn btn-secondary',
             'disabled' => 'disabled',
             'title' => get_string('nopermissions', 'error')
