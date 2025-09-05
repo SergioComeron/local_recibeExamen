@@ -264,8 +264,6 @@ class process_exam_task extends \core\task\adhoc_task {
                 }
             }
 
-            purge_caches();
-
             // Crear el PDF
             $fs = get_file_storage();
             $pdf = new \pdf();
