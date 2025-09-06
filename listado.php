@@ -34,8 +34,79 @@ require_capability('local/recibeexamen:viewqueue', context_system::instance());
 $searchuser = optional_param('searchuser', '', PARAM_TEXT);
 // Obtener parámetro de búsqueda por código de examen.
 $searchexam = optional_param('searchexam', '', PARAM_TEXT);
+$onlytoday = optional_param('onlytoday', 0, PARAM_BOOL);
+$download = optional_param('download', '', PARAM_ALPHA);
 
-$url = new moodle_url('/local/recibeexamen/listado.php');
+if ($download === 'csv') {
+    global $DB;
+    // Build WHERE clause & params based on current filters.
+    $where = [];
+    $params = [];
+    if (!empty($searchuser)) {
+        $where[] = "data::jsonb ->> 'idusuldap' ILIKE :searchuser";
+        $params['searchuser'] = '%' . $searchuser . '%';
+    }
+    if (!empty($searchexam)) {
+        $where[] = "data::jsonb ->> 'exacodnum' ILIKE :searchexam";
+        $params['searchexam'] = '%' . $searchexam . '%';
+    }
+    if ($onlytoday) {
+        $today_start = strtotime('today');
+        $today_end = strtotime('tomorrow') - 1;
+        $where[] = "timecreated BETWEEN :todaystart AND :todayend";
+        $params['todaystart'] = $today_start;
+        $params['todayend'] = $today_end;
+    }
+    $whereclause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+    // Export all records matching current filters (no pagination)
+
+    // Order: use the same default as the table when no sort is provided.
+    $sqlorder = 'ORDER BY id DESC';
+
+    $sql = "SELECT id, userid, status, filename, data, timecreated
+            FROM {local_recibeexamen_queue}
+            $whereclause
+            $sqlorder";
+
+    $records = $DB->get_records_sql($sql, $params);
+
+    // Prepare CSV
+    $filename = 'recibeexamen_listado_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    $out = fopen('php://output', 'w');
+    // CSV header row (match visible table order)
+    fputcsv($out, [
+        'ID', 'Usuario', 'Examen', 'Asignatura', 'Plan', 'Estado', 'Fichero', 'Fecha Inicio', 'Fecha Fin', 'Creado'
+    ]);
+
+    foreach ($records as $record) {
+        $data = json_decode($record->data, true) ?: [];
+        fputcsv($out, [
+            $record->id,
+            $data['idusuldap'] ?? '-',
+            $data['exacodnum'] ?? '-',
+            $data['assnomid1'] ?? '-',
+            $data['planomid1'] ?? '-',
+            $record->status ?? '-',
+            $record->filename ?? '-',
+            $data['fechainicio'] ?? '-',
+            $data['fechafin'] ?? '-',
+            userdate($record->timecreated)
+        ]);
+    }
+
+    fclose($out);
+    exit;
+}
+
+$url = new moodle_url('/local/recibeexamen/listado.php', [
+    'searchuser' => $searchuser,
+    'searchexam' => $searchexam,
+    'onlytoday'  => $onlytoday,
+]);
 $PAGE->set_url($url);
 $PAGE->set_context(context_system::instance());
 $PAGE->set_title(get_string('list', 'local_recibeexamen'));
@@ -156,12 +227,32 @@ $mform->addElement('text', 'searchexam', get_string('searchexam', 'local_recibee
 $mform->setType('searchexam', PARAM_TEXT);
 $mform->setDefault('searchexam', $searchexam);
 
+$mform->addElement('advcheckbox', 'onlytoday', get_string('onlytoday', 'local_recibeexamen'));
+$mform->setDefault('onlytoday', (int)$onlytoday);
+
 $mform->addElement('submit', 'submitbutton', get_string('search', 'local_recibeexamen'));
 $mform->display();
 
+// Export button (exports the rows shown on screen)
+$exporturl = new moodle_url($PAGE->url, [
+    'searchuser' => $searchuser,
+    'searchexam' => $searchexam,
+    'onlytoday'  => $onlytoday,
+    'page'       => optional_param('page', 0, PARAM_INT),
+    'download'   => 'csv'
+]);
+echo html_writer::link($exporturl, get_string('exportcsv', 'local_recibeexamen', null) ?: 'Exportar CSV', [
+    'class' => 'btn btn-primary mb-3'
+]);
+
 // Crear instancia de la tabla.
 $table = new mod_recibeexamen_queue_table('recibeexamen_queue_table');
-$table->define_baseurl($PAGE->url);
+$baseurl = new moodle_url($PAGE->url, [
+    'searchuser' => $searchuser,
+    'searchexam' => $searchexam,
+    'onlytoday'  => $onlytoday
+]);
+$table->define_baseurl($baseurl);
 $table->setup(); // <-- ¡Primero hay que llamar a setup!
 
 global $DB;
@@ -176,6 +267,13 @@ if (!empty($searchuser)) {
 if (!empty($searchexam)) {
     $where[] = "data::jsonb ->> 'exacodnum' ILIKE :searchexam";
     $params['searchexam'] = '%' . $searchexam . '%';
+}
+if ($onlytoday) {
+    $today_start = strtotime('today');
+    $today_end = strtotime('tomorrow') - 1;
+    $where[] = "timecreated BETWEEN :todaystart AND :todayend";
+    $params['todaystart'] = $today_start;
+    $params['todayend'] = $today_end;
 }
 $whereclause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 if (!empty($whereclause)) {
