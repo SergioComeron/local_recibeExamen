@@ -123,6 +123,12 @@ $stats['total'] = $DB->count_records('local_recibeexamen_queue');
 $stats['pending'] = $DB->count_records('local_recibeexamen_queue', ['status' => '']); // O el valor por defecto que uses
 $stats['processed'] = $DB->count_records('local_recibeexamen_queue', ['status' => 'done']);
 $stats['error'] = $DB->count_records('local_recibeexamen_queue', ['status' => 'failed']);
+// Exámenes únicos (global)
+$stats['unique_total'] = (int)$DB->get_field_sql("
+    SELECT COUNT(DISTINCT data::jsonb ->> 'exacodnum')
+    FROM {local_recibeexamen_queue}
+    WHERE data::jsonb ->> 'exacodnum' IS NOT NULL
+");
 
 // Estadísticas por fecha (últimos 7 días)
 $weekago = time() - (7 * 24 * 60 * 60);
@@ -135,6 +141,12 @@ $stats['today'] = $DB->count_records_select('local_recibeexamen_queue', 'timecre
 $stats['today_done'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'done']);
 $stats['today_failed'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'failed']);
 $stats['today_pending'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND (status = ? OR status IS NULL)', [$today_start, $today_end, '']);
+$stats['today_unique'] = (int)$DB->get_field_sql("
+    SELECT COUNT(DISTINCT data::jsonb ->> 'exacodnum')
+    FROM {local_recibeexamen_queue}
+    WHERE timecreated >= ? AND timecreated <= ?
+      AND data::jsonb ->> 'exacodnum' IS NOT NULL
+", [$today_start, $today_end]);
 
 // Estadísticas de la semana pasada también con desglose
 $weekago = time() - (7 * 24 * 60 * 60);
@@ -142,6 +154,12 @@ $stats['last_week'] = $DB->count_records_select('local_recibeexamen_queue', 'tim
 $stats['last_week_done'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND status = ?', [$weekago, 'done']);
 $stats['last_week_failed'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND status = ?', [$weekago, 'failed']);
 $stats['last_week_pending'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND (status = ? OR status IS NULL)', [$weekago, '']);
+$stats['last_week_unique'] = (int)$DB->get_field_sql("
+    SELECT COUNT(DISTINCT data::jsonb ->> 'exacodnum')
+    FROM {local_recibeexamen_queue}
+    WHERE timecreated >= ?
+      AND data::jsonb ->> 'exacodnum' IS NOT NULL
+", [$weekago]);
 
 // Obtener los exámenes más frecuentes
 $frequent_exams_sql = "
@@ -163,6 +181,7 @@ echo '<div class="card border-primary">';
 echo '<div class="card-header bg-primary text-white"><strong>' . get_string('general_stats', 'local_recibeexamen') . '</strong></div>';
 echo '<div class="card-body">';
 echo '<p><strong>' . get_string('total_exams', 'local_recibeexamen') . ':</strong> ' . $stats['total'] . '</p>';
+echo '<p><strong>Exámenes únicos:</strong> ' . $stats['unique_total'] . '</p>';
 echo '<p><strong>' . get_string('pending_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-warning">' . $stats['pending'] . '</span></p>';
 echo '<p><strong>' . get_string('processed_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-success">' . $stats['processed'] . '</span></p>';
 echo '<p><strong>' . get_string('error_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-danger">' . $stats['error'] . '</span></p>';
@@ -176,6 +195,7 @@ echo '<div class="card border-info">';
 echo '<div class="card-header bg-info text-white"><strong>' . get_string('time_stats', 'local_recibeexamen') . '</strong></div>';
 echo '<div class="card-body">';
 echo '<p><strong>' . get_string('today_exams', 'local_recibeexamen') . ':</strong> ' . $stats['today'] . '</p>';
+echo '<div class="text-muted" style="margin-left: 15px; font-size: 0.9em;">Únicos: ' . $stats['today_unique'] . '</div>';
 echo '<div style="margin-left: 15px; font-size: 0.9em;">';
 echo '<span class="badge badge-success">' . $stats['today_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
 echo '<span class="badge badge-warning">' . $stats['today_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
@@ -183,6 +203,7 @@ echo '<span class="badge badge-danger">' . $stats['today_failed'] . ' ' . get_st
 echo '</div>';
 echo '<hr style="margin: 10px 0;">';
 echo '<p><strong>' . get_string('last_week_exams', 'local_recibeexamen') . ':</strong> ' . $stats['last_week'] . '</p>';
+echo '<div class="text-muted" style="margin-left: 15px; font-size: 0.9em;">Únicos: ' . $stats['last_week_unique'] . '</div>';
 echo '<div style="margin-left: 15px; font-size: 0.9em;">';
 echo '<span class="badge badge-success">' . $stats['last_week_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
 echo '<span class="badge badge-warning">' . $stats['last_week_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
