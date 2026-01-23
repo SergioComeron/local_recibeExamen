@@ -78,5 +78,12 @@ $string['no_data'] = 'No data available';
 $string['completed'] = 'completed';
 $string['pending'] = 'pending';
 $string['failed'] = 'failed';
-
-
+$string['deletesubmission'] = 'Delete submission';
+$string['confirmdeletesubmission'] = 'Are you sure you want to delete the submission for user {$a->user} in course "{$a->course}", assignment "{$a->assign}"? This action cannot be undone.';
+$string['submissiondeleted'] = 'The submission has been deleted successfully.';
+$string['errorqueuenotfound'] = 'Queue entry not found.';
+$string['errornotprocessed'] = 'This entry has not been processed yet. Only processed entries can be deleted.';
+$string['errorassignnotfound'] = 'Assignment not found.';
+$string['errorsubmissionnotfound'] = 'Submission not found.';
+$string['delete'] = 'Delete';
+$string['confirmdeletenosubmission'] = 'The submission for user {$a->user} has already been deleted from the assignment. Do you want to mark this queue entry as deleted?';

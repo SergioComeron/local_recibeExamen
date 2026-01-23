@@ -371,8 +371,17 @@ foreach ($records as $record) {
         </div>
     </div>';
 
+    // Botón para eliminar la entrega (solo si está procesado).
+    $deletebutton = '';
+    if ($record->status === 'done') {
+        $deleteurl = new moodle_url('/local/recibeexamen/delete.php', ['id' => $record->id, 'page' => $page]);
+        $deletebutton = html_writer::link($deleteurl, get_string('delete', 'local_recibeexamen'), [
+            'class' => 'btn btn-danger btn-sm',
+        ]);
+    }
+
     // Combinar acciones
-    $acciones_completas = $acciones . ' ' . $data_button . $modal;
+    $acciones_completas = $acciones . ' ' . $data_button . ' ' . $deletebutton . $modal;
 
     // Crear enlace a la asignatura si existen los campos necesarios.
     $asignaturalink = $data['assnomid1'] ?? '-';
