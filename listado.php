@@ -374,11 +374,24 @@ foreach ($records as $record) {
     // Combinar acciones
     $acciones_completas = $acciones . ' ' . $data_button . $modal;
 
+    // Crear enlace a la asignatura si existen los campos necesarios.
+    $asignaturalink = $data['assnomid1'] ?? '-';
+    if (!empty($data['anyanyaca']) && !empty($data['asscodnum']) &&
+        !empty($data['vaccodnum']) && !empty($data['gaccodnum'])) {
+        $courseshortname = $data['anyanyaca'] . '_' . $data['asscodnum'] .
+                          '_' . $data['vaccodnum'] . '_' . $data['gaccodnum'];
+        $course = $DB->get_record('course', ['shortname' => $courseshortname], 'id');
+        if ($course) {
+            $courseurl = new moodle_url('/course/view.php', ['id' => $course->id]);
+            $asignaturalink = html_writer::link($courseurl, $data['assnomid1'] ?? $courseshortname);
+        }
+    }
+
     $table->add_data([
         $record->id,
         $userlink,
         $data['exacodnum'] ?? '-',
-        $data['assnomid1'] ?? '-',
+        $asignaturalink,
         $data['planomid1'] ?? '-',
         $record->status ?? '-',
         $record->filename ?? '-',
