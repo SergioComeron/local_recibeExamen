@@ -37,6 +37,30 @@ $searchexam = optional_param('searchexam', '', PARAM_TEXT);
 $onlytoday = optional_param('onlytoday', 0, PARAM_BOOL);
 $download = optional_param('download', '', PARAM_ALPHA);
 
+// Parámetros de rango de fechas.
+// date_selector envía arrays desde el formulario, pero timestamps desde URLs de paginación.
+$datefrom = 0;
+$dateto = 0;
+
+// Verificar si los parámetros vienen como array (formulario) o como escalar (URL).
+if (isset($_REQUEST['datefrom']) && is_array($_REQUEST['datefrom'])) {
+    $datefromarray = optional_param_array('datefrom', [], PARAM_INT);
+    if (!empty($datefromarray['enabled'])) {
+        $datefrom = make_timestamp($datefromarray['year'], $datefromarray['month'], $datefromarray['day']);
+    }
+} else {
+    $datefrom = optional_param('datefrom', 0, PARAM_INT);
+}
+
+if (isset($_REQUEST['dateto']) && is_array($_REQUEST['dateto'])) {
+    $datetoarray = optional_param_array('dateto', [], PARAM_INT);
+    if (!empty($datetoarray['enabled'])) {
+        $dateto = make_timestamp($datetoarray['year'], $datetoarray['month'], $datetoarray['day']);
+    }
+} else {
+    $dateto = optional_param('dateto', 0, PARAM_INT);
+}
+
 if ($download === 'csv') {
     global $DB;
     // Build WHERE clause & params based on current filters.
@@ -56,6 +80,17 @@ if ($download === 'csv') {
         $where[] = "timecreated BETWEEN :todaystart AND :todayend";
         $params['todaystart'] = $today_start;
         $params['todayend'] = $today_end;
+    } else {
+        // Filtro por rango de fechas.
+        if ($datefrom > 0) {
+            $where[] = "timecreated >= :datefrom";
+            $params['datefrom'] = $datefrom;
+        }
+        if ($dateto > 0) {
+            // Añadir 23:59:59 al día final para incluir todo el día.
+            $where[] = "timecreated <= :dateto";
+            $params['dateto'] = $dateto + 86399;
+        }
     }
     $whereclause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
@@ -79,7 +114,7 @@ if ($download === 'csv') {
     $out = fopen('php://output', 'w');
     // CSV header row (match visible table order)
     fputcsv($out, [
-        'ID', 'Usuario', 'Examen', 'Asignatura', 'Plan', 'Estado', 'Fichero', 'Fecha Inicio', 'Fecha Fin', 'Creado'
+        'ID', 'Usuario', 'Examen', 'Asignatura', 'Plan', 'Sede', 'Estado', 'Fichero', 'Fecha Inicio', 'Fecha Fin', 'Creado'
     ]);
 
     foreach ($records as $record) {
@@ -90,6 +125,7 @@ if ($download === 'csv') {
             $data['exacodnum'] ?? '-',
             $data['assnomid1'] ?? '-',
             $data['planomid1'] ?? '-',
+            $data['sede'] ?? '-',
             $record->status ?? '-',
             $record->filename ?? '-',
             $data['fechainicio'] ?? '-',
@@ -102,11 +138,18 @@ if ($download === 'csv') {
     exit;
 }
 
-$url = new moodle_url('/local/recibeexamen/listado.php', [
+$urlparams = [
     'searchuser' => $searchuser,
     'searchexam' => $searchexam,
     'onlytoday'  => $onlytoday,
-]);
+];
+if ($datefrom > 0) {
+    $urlparams['datefrom'] = $datefrom;
+}
+if ($dateto > 0) {
+    $urlparams['dateto'] = $dateto;
+}
+$url = new moodle_url('/local/recibeexamen/listado.php', $urlparams);
 $PAGE->set_url($url);
 $PAGE->set_context(context_system::instance());
 $PAGE->set_title(get_string('list', 'local_recibeexamen'));
@@ -251,28 +294,51 @@ $mform->setDefault('searchexam', $searchexam);
 $mform->addElement('advcheckbox', 'onlytoday', get_string('onlytoday', 'local_recibeexamen'));
 $mform->setDefault('onlytoday', (int)$onlytoday);
 
+// Selectores de rango de fechas.
+$mform->addElement('date_selector', 'datefrom', get_string('datefrom', 'local_recibeexamen'), ['optional' => true]);
+$mform->setDefault('datefrom', $datefrom > 0 ? $datefrom : null);
+$mform->disabledIf('datefrom', 'onlytoday', 'checked');
+
+$mform->addElement('date_selector', 'dateto', get_string('dateto', 'local_recibeexamen'), ['optional' => true]);
+$mform->setDefault('dateto', $dateto > 0 ? $dateto : null);
+$mform->disabledIf('dateto', 'onlytoday', 'checked');
+
 $mform->addElement('submit', 'submitbutton', get_string('search', 'local_recibeexamen'));
 $mform->display();
 
 // Export button (exports the rows shown on screen)
-$exporturl = new moodle_url($PAGE->url, [
+$exportparams = [
     'searchuser' => $searchuser,
     'searchexam' => $searchexam,
     'onlytoday'  => $onlytoday,
     'page'       => optional_param('page', 0, PARAM_INT),
     'download'   => 'csv'
-]);
+];
+if ($datefrom > 0) {
+    $exportparams['datefrom'] = $datefrom;
+}
+if ($dateto > 0) {
+    $exportparams['dateto'] = $dateto;
+}
+$exporturl = new moodle_url($PAGE->url, $exportparams);
 echo html_writer::link($exporturl, get_string('exportcsv', 'local_recibeexamen', null) ?: 'Exportar CSV', [
     'class' => 'btn btn-primary mb-3'
 ]);
 
 // Crear instancia de la tabla.
 $table = new mod_recibeexamen_queue_table('recibeexamen_queue_table');
-$baseurl = new moodle_url($PAGE->url, [
+$baseurlparams = [
     'searchuser' => $searchuser,
     'searchexam' => $searchexam,
     'onlytoday'  => $onlytoday
-]);
+];
+if ($datefrom > 0) {
+    $baseurlparams['datefrom'] = $datefrom;
+}
+if ($dateto > 0) {
+    $baseurlparams['dateto'] = $dateto;
+}
+$baseurl = new moodle_url($PAGE->url, $baseurlparams);
 $table->define_baseurl($baseurl);
 $table->setup(); // <-- ¡Primero hay que llamar a setup!
 
@@ -295,6 +361,17 @@ if ($onlytoday) {
     $where[] = "timecreated BETWEEN :todaystart AND :todayend";
     $params['todaystart'] = $today_start;
     $params['todayend'] = $today_end;
+} else {
+    // Filtro por rango de fechas.
+    if ($datefrom > 0) {
+        $where[] = "timecreated >= :datefrom";
+        $params['datefrom'] = $datefrom;
+    }
+    if ($dateto > 0) {
+        // Añadir 23:59:59 al día final para incluir todo el día.
+        $where[] = "timecreated <= :dateto";
+        $params['dateto'] = $dateto + 86399;
+    }
 }
 $whereclause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 if (!empty($whereclause)) {
@@ -402,6 +479,7 @@ foreach ($records as $record) {
         $data['exacodnum'] ?? '-',
         $asignaturalink,
         $data['planomid1'] ?? '-',
+        $data['sede'] ?? '-',
         $record->status ?? '-',
         $record->filename ?? '-',
         $data['fechainicio'] ?? '-',

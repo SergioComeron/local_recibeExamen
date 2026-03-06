@@ -87,3 +87,7 @@ $string['errorassignnotfound'] = 'Assignment not found.';
 $string['errorsubmissionnotfound'] = 'Submission not found.';
 $string['delete'] = 'Delete';
 $string['confirmdeletenosubmission'] = 'The submission for user {$a->user} has already been deleted from the assignment. Do you want to mark this queue entry as deleted?';
+$string['datefrom'] = 'From date';
+$string['dateto'] = 'To date';
+$string['searchsede'] = 'Sede';
+$string['allsedes'] = 'All sedes';
