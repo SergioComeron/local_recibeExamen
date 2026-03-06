@@ -155,6 +155,19 @@ $PAGE->set_context(context_system::instance());
 $PAGE->set_title(get_string('list', 'local_recibeexamen'));
 $PAGE->set_heading(get_string('list', 'local_recibeexamen'));
 
+// Compatibilidad Bootstrap 4 (Moodle <5) / Bootstrap 5 (Moodle 5+).
+$bs5 = (float)$CFG->release >= 5.0;
+$badge_success   = 'badge ' . ($bs5 ? 'text-bg-success'   : 'badge-success');
+$badge_warning   = 'badge ' . ($bs5 ? 'text-bg-warning'   : 'badge-warning');
+$badge_danger    = 'badge ' . ($bs5 ? 'text-bg-danger'     : 'badge-danger');
+$badge_secondary = 'badge ' . ($bs5 ? 'text-bg-secondary'  : 'badge-secondary');
+$datatoggle      = $bs5 ? 'data-bs-toggle' : 'data-toggle';
+$datatarget      = $bs5 ? 'data-bs-target' : 'data-target';
+$datadismiss     = $bs5 ? 'data-bs-dismiss' : 'data-dismiss';
+$btn_close       = $bs5
+    ? '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>'
+    : '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+
 echo $OUTPUT->header();
 
 // Agregar sección de estadísticas
@@ -204,6 +217,87 @@ $stats['last_week_unique'] = (int)$DB->get_field_sql("
       AND data::jsonb ->> 'exacodnum' IS NOT NULL
 ", [$weekago]);
 
+// Distribución por sede (top 5).
+$sedes_stats = $DB->get_records_sql("
+    SELECT data::jsonb ->> 'sede' AS sede, COUNT(*) AS count
+    FROM {local_recibeexamen_queue}
+    WHERE data::jsonb ->> 'sede' IS NOT NULL AND data::jsonb ->> 'sede' != ''
+    GROUP BY data::jsonb ->> 'sede'
+    ORDER BY count DESC
+    LIMIT 5
+");
+
+// Distribución por convocatoria (top 5).
+$convocatoria_stats = $DB->get_records_sql("
+    SELECT data::jsonb ->> 'tcocodalf' AS convocatoria, COUNT(*) AS count
+    FROM {local_recibeexamen_queue}
+    WHERE data::jsonb ->> 'tcocodalf' IS NOT NULL
+    GROUP BY data::jsonb ->> 'tcocodalf'
+    ORDER BY count DESC
+    LIMIT 5
+");
+
+// Distribución por año académico.
+$anyaca_stats = $DB->get_records_sql("
+    SELECT data::jsonb ->> 'anyanyaca' AS anyanyaca, COUNT(*) AS count
+    FROM {local_recibeexamen_queue}
+    WHERE data::jsonb ->> 'anyanyaca' IS NOT NULL
+    GROUP BY data::jsonb ->> 'anyanyaca'
+    ORDER BY count DESC
+");
+
+// Helper para formatear bytes.
+$format_bytes = function(int $bytes): string {
+    if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+    if ($bytes >= 1048576)    return round($bytes / 1048576, 2) . ' MB';
+    if ($bytes >= 1024)       return round($bytes / 1024, 2) . ' KB';
+    return $bytes . ' B';
+};
+
+// Almacenamiento: solo se calcula si se solicita explícitamente.
+$calcStorage = optional_param('calcStorage', 0, PARAM_BOOL);
+$storage_data = null;
+if ($calcStorage) {
+    $storage_row = $DB->get_record_sql("
+        SELECT
+            COUNT(*)                       AS total_files,
+            COALESCE(SUM(f.filesize), 0)   AS total_size,
+            COALESCE(AVG(f.filesize), 0)   AS avg_size,
+            COALESCE(MAX(f.filesize), 0)   AS max_size,
+            COALESCE(MIN(f.filesize), 0)   AS min_size
+        FROM {files} f
+        JOIN {assign_submission} s ON s.id = f.itemid
+        JOIN {assign} a ON a.id = s.assignment
+        WHERE f.component = 'assignsubmission_file'
+          AND f.filearea = 'submission_files'
+          AND f.filename != '.'
+          AND a.name LIKE 'Examen final %'
+    ");
+    $storage_top = $DB->get_records_sql("
+        SELECT a.name, COUNT(*) AS total_files, SUM(f.filesize) AS total_size
+        FROM {files} f
+        JOIN {assign_submission} s ON s.id = f.itemid
+        JOIN {assign} a ON a.id = s.assignment
+        WHERE f.component = 'assignsubmission_file'
+          AND f.filearea = 'submission_files'
+          AND f.filename != '.'
+          AND a.name LIKE 'Examen final %'
+        GROUP BY a.name
+        ORDER BY total_size DESC
+        LIMIT 5
+    ");
+    if ($storage_row) {
+        $storage_data = [
+            'files'   => (int)$storage_row->total_files,
+            'total'   => $format_bytes((int)$storage_row->total_size),
+            'avg'     => $format_bytes((int)$storage_row->avg_size),
+            'max'     => $format_bytes((int)$storage_row->max_size),
+            'min'     => $format_bytes((int)$storage_row->min_size),
+            'top'     => $storage_top,
+        ];
+    }
+}
+
 // Obtener los exámenes más frecuentes
 $frequent_exams_sql = "
     SELECT data::jsonb ->> 'exacodnum' as exam_code, COUNT(*) as count
@@ -225,9 +319,9 @@ echo '<div class="card-header bg-primary text-white"><strong>' . get_string('gen
 echo '<div class="card-body">';
 echo '<p><strong>' . get_string('total_exams', 'local_recibeexamen') . ':</strong> ' . $stats['total'] . '</p>';
 echo '<p><strong>Exámenes únicos:</strong> ' . $stats['unique_total'] . '</p>';
-echo '<p><strong>' . get_string('pending_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-warning">' . $stats['pending'] . '</span></p>';
-echo '<p><strong>' . get_string('processed_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-success">' . $stats['processed'] . '</span></p>';
-echo '<p><strong>' . get_string('error_exams', 'local_recibeexamen') . ':</strong> <span class="badge badge-danger">' . $stats['error'] . '</span></p>';
+echo '<p><strong>' . get_string('pending_exams', 'local_recibeexamen') . ':</strong> <span class="' . $badge_warning . '">' . $stats['pending'] . '</span></p>';
+echo '<p><strong>' . get_string('processed_exams', 'local_recibeexamen') . ':</strong> <span class="' . $badge_success . '">' . $stats['processed'] . '</span></p>';
+echo '<p><strong>' . get_string('error_exams', 'local_recibeexamen') . ':</strong> <span class="' . $badge_danger . '">' . $stats['error'] . '</span></p>';
 echo '</div>';
 echo '</div>';
 echo '</div>';
@@ -240,17 +334,17 @@ echo '<div class="card-body">';
 echo '<p><strong>' . get_string('today_exams', 'local_recibeexamen') . ':</strong> ' . $stats['today'] . '</p>';
 echo '<div class="text-muted" style="margin-left: 15px; font-size: 0.9em;">Únicos: ' . $stats['today_unique'] . '</div>';
 echo '<div style="margin-left: 15px; font-size: 0.9em;">';
-echo '<span class="badge badge-success">' . $stats['today_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
-echo '<span class="badge badge-warning">' . $stats['today_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
-echo '<span class="badge badge-danger">' . $stats['today_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
+echo '<span class="' . $badge_success . '">' . $stats['today_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
+echo '<span class="' . $badge_warning . '">' . $stats['today_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
+echo '<span class="' . $badge_danger . '">' . $stats['today_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
 echo '</div>';
 echo '<hr style="margin: 10px 0;">';
 echo '<p><strong>' . get_string('last_week_exams', 'local_recibeexamen') . ':</strong> ' . $stats['last_week'] . '</p>';
 echo '<div class="text-muted" style="margin-left: 15px; font-size: 0.9em;">Únicos: ' . $stats['last_week_unique'] . '</div>';
 echo '<div style="margin-left: 15px; font-size: 0.9em;">';
-echo '<span class="badge badge-success">' . $stats['last_week_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
-echo '<span class="badge badge-warning">' . $stats['last_week_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
-echo '<span class="badge badge-danger">' . $stats['last_week_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
+echo '<span class="' . $badge_success . '">' . $stats['last_week_done'] . ' ' . get_string('completed', 'local_recibeexamen') . '</span> ';
+echo '<span class="' . $badge_warning . '">' . $stats['last_week_pending'] . ' ' . get_string('pending', 'local_recibeexamen') . '</span> ';
+echo '<span class="' . $badge_danger . '">' . $stats['last_week_failed'] . ' ' . get_string('failed', 'local_recibeexamen') . '</span>';
 echo '</div>';
 echo '</div>';
 echo '</div>';
@@ -277,6 +371,91 @@ echo '</div>';
 echo '</div>';
 
 echo '</div>'; // Cierre del row
+
+// Fila de distribución
+echo '<div class="row mb-3">';
+
+// Card: Top sedes
+echo '<div class="col-md-4 mb-3">';
+echo '<div class="card h-100 border-dark">';
+echo '<div class="card-header bg-dark text-white"><strong>Top sedes</strong></div>';
+echo '<div class="card-body p-2">';
+if ($sedes_stats) {
+    echo '<ul class="list-unstyled mb-0">';
+    foreach ($sedes_stats as $row) {
+        echo '<li><strong>' . s($row->sede) . ':</strong> ' . $row->count . '</li>';
+    }
+    echo '</ul>';
+} else {
+    echo '<p class="mb-0">' . get_string('no_data', 'local_recibeexamen') . '</p>';
+}
+echo '</div></div></div>';
+
+// Card: Convocatorias
+echo '<div class="col-md-4 mb-3">';
+echo '<div class="card h-100 border-dark">';
+echo '<div class="card-header bg-dark text-white"><strong>Convocatorias</strong></div>';
+echo '<div class="card-body p-2">';
+if ($convocatoria_stats) {
+    echo '<ul class="list-unstyled mb-0">';
+    foreach ($convocatoria_stats as $row) {
+        echo '<li><strong>' . s($row->convocatoria) . ':</strong> ' . $row->count . '</li>';
+    }
+    echo '</ul>';
+} else {
+    echo '<p class="mb-0">' . get_string('no_data', 'local_recibeexamen') . '</p>';
+}
+echo '</div></div></div>';
+
+// Card: Años académicos
+echo '<div class="col-md-4 mb-3">';
+echo '<div class="card h-100 border-dark">';
+echo '<div class="card-header bg-dark text-white"><strong>Años académicos</strong></div>';
+echo '<div class="card-body p-2">';
+if ($anyaca_stats) {
+    echo '<ul class="list-unstyled mb-0">';
+    foreach ($anyaca_stats as $row) {
+        echo '<li><strong>' . s($row->anyanyaca) . ':</strong> ' . $row->count . '</li>';
+    }
+    echo '</ul>';
+} else {
+    echo '<p class="mb-0">' . get_string('no_data', 'local_recibeexamen') . '</p>';
+}
+echo '</div></div></div>';
+
+echo '</div>'; // Cierre fila distribución
+
+// Card de almacenamiento
+$calcstorage_url = new moodle_url('/local/recibeexamen/listado.php', array_merge($urlparams, ['calcStorage' => 1]));
+echo '<div class="row mb-3">';
+echo '<div class="col-12">';
+echo '<div class="card border-secondary">';
+echo '<div class="card-header bg-secondary text-white"><strong>Almacenamiento de exámenes</strong></div>';
+echo '<div class="card-body py-2">';
+if ($storage_data) {
+    echo '<div class="d-flex flex-wrap mb-3" style="gap: 2rem;">';
+    echo '<span><strong>Archivos:</strong> ' . $storage_data['files'] . '</span>';
+    echo '<span><strong>Total:</strong> <span class="' . $badge_secondary . '" style="font-size:1em;">' . $storage_data['total'] . '</span></span>';
+    echo '<span><strong>Media por archivo:</strong> ' . $storage_data['avg'] . '</span>';
+    echo '<span><strong>Máximo:</strong> ' . $storage_data['max'] . '</span>';
+    echo '<span><strong>Mínimo:</strong> ' . $storage_data['min'] . '</span>';
+    echo '</div>';
+    if ($storage_data['top']) {
+        echo '<strong>Top 5 buzones por espacio:</strong>';
+        echo '<table class="table table-sm table-bordered mt-1 mb-0">';
+        echo '<thead><tr><th>Buzón</th><th>Archivos</th><th>Espacio</th></tr></thead><tbody>';
+        foreach ($storage_data['top'] as $row) {
+            echo '<tr><td>' . s($row->name) . '</td><td>' . $row->total_files . '</td><td>' . $format_bytes((int)$row->total_size) . '</td></tr>';
+        }
+        echo '</tbody></table>';
+    }
+} else {
+    echo html_writer::link($calcstorage_url, 'Calcular almacenamiento', ['class' => 'btn btn-secondary btn-sm']);
+}
+echo '</div>';
+echo '</div>';
+echo '</div>';
+echo '</div>';
 
 // Separador
 echo '<hr>';
@@ -422,7 +601,7 @@ foreach ($records as $record) {
 
     // Botón para mostrar datos JSON
     $data_formatted = json_encode($data, JSON_PRETTY_PRINT);
-    $data_button = '<button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#dataModal' . $record->id . '">
+    $data_button = '<button type="button" class="btn btn-info btn-sm" ' . $datatoggle . '="modal" ' . $datatarget . '="#dataModal' . $record->id . '">
         <i class="fa fa-eye"></i> Ver datos
     </button>';
     
@@ -433,16 +612,14 @@ foreach ($records as $record) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="dataModalLabel' . $record->id . '">Datos JSON - ID: ' . $record->id . '</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    ' . $btn_close . '
                 </div>
                 <div class="modal-body">
                     <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">' . 
                     htmlspecialchars($data_formatted) . '</pre>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-secondary" ' . $datadismiss . '="modal">Cerrar</button>
                 </div>
             </div>
         </div>
