@@ -4,7 +4,7 @@
 #   → main:   bumea version.php y commitea antes de pushear
 
 MOODLE_ROOT="/Users/sergiocomeron/moodles/stable_405/moodle"
-TEST_FILE="local/recibeexamen/tests/queue_files_test.php"
+TESTSUITE="local_recibeexamen_testsuite"
 REPO_ROOT=$(pwd)
 
 while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
@@ -12,7 +12,7 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
         refs/heads/dev)
             echo ">>> PHPUnit: local_recibeexamen"
             cd "$MOODLE_ROOT" || exit 1
-            vendor/bin/phpunit "$TEST_FILE"
+            vendor/bin/phpunit --testsuite "$TESTSUITE"
             STATUS=$?
             cd "$REPO_ROOT"
             if [ $STATUS -ne 0 ]; then
