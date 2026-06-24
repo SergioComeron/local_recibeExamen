@@ -118,11 +118,6 @@ class process_exam_task_test extends \advanced_testcase {
         ob_start();
         $task->execute();
         ob_end_clean();
-
-        // La tarea de producción inserta course_modules.section con el número de
-        // sección en vez del id, lo que provoca un debugging() en el rebuild de
-        // caché (inocuo en producción, con debugging desactivado). Lo consumimos.
-        $this->resetDebugging();
     }
 
     public function test_processes_queue_and_copies_pdf_to_submission(): void {
@@ -152,6 +147,13 @@ class process_exam_task_test extends \advanced_testcase {
         $moduleid = $DB->get_field('modules', 'id', ['name' => 'assign']);
         $cm = $DB->get_record('course_modules', ['module' => $moduleid, 'instance' => $assign->id]);
         $context = \context_module::instance($cm->id);
+
+        // course_modules.section apunta al id de una fila de course_sections de
+        // este curso (no al número de sección), por lo que el rebuild de caché
+        // no rompe la comprobación de integridad.
+        $section = $DB->get_record('course_sections', ['id' => $cm->section]);
+        $this->assertNotEmpty($section);
+        $this->assertEquals($this->course->id, $section->course);
 
         $fs = get_file_storage();
         $files = $fs->get_area_files(

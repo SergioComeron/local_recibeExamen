@@ -98,7 +98,10 @@ class process_exam_task extends \core\task\adhoc_task {
                 $cm->course = $course->id;
                 $cm->module = $module->id;
                 $cm->instance = 0;
-                $cm->section = $new_section_number;
+                // course_modules.section debe ser el id de la fila de course_sections,
+                // no el número de sección, o el rebuild de caché falla la comprobación
+                // de integridad.
+                $cm->section = $section->id;
                 $cm->visible = 0;
                 $cm->visibleoncoursepage = 1;
                 $cm->added = time();
