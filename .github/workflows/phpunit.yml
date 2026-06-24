@@ -1,0 +1,58 @@
+name: PHPUnit
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+    steps:
+      - name: Check out local_recibeexamen
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pgsql, zip, gd, soap
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Initialise moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo $(cd ci && pwd)/bin >> $GITHUB_PATH
+          echo $(cd ci && pwd)/vendor/bin >> $GITHUB_PATH
+          sudo locale-gen en_AU.UTF-8
+
+      - name: Install moodle-plugin-ci
+        run: |
+          moodle-plugin-ci install \
+            --plugin ./plugin \
+            --db-host 127.0.0.1 \
+            --db-pass postgres
+        env:
+          DB: pgsql
+          MOODLE_BRANCH: MOODLE_405_STABLE
+          PGPASSWORD: postgres
+
+      - name: PHPUnit tests
+        run: moodle-plugin-ci phpunit --fail-on-warning

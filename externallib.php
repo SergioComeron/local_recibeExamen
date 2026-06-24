@@ -62,25 +62,34 @@ class local_recibeexamen_external extends external_api {
             throw new moodle_exception('filetoobig', 'local_recibeexamen');
         }
 
-        // Guardar archivo en carpeta temporal
-        $filename = 'exam_' . $user->id . '_' . time() . '.pdf';
-        $tempdir = make_temp_directory('recibeexamen');
-        $temppath = $tempdir . '/' . $filename;
-
-        if (!move_uploaded_file($_FILES['pdfdata']['tmp_name'], $temppath)) {
+        if (!is_uploaded_file($_FILES['pdfdata']['tmp_name'])) {
             throw new moodle_exception('uploadfailed', 'local_recibeexamen');
         }
 
-        // Insertar en la cola de procesamiento
+        $filename = 'exam_' . $user->id . '_' . time() . '.pdf';
+
+        // Insertar en la cola de procesamiento. El PDF se almacena en el File API
+        // (área 'examqueue', itemid = queueid) en vez de moodledata/temp, para que
+        // la tarea adhoc lo recupere de forma fiable aunque se ejecute más tarde y
+        // sin riesgo de que la limpieza de temporales lo borre.
         $record = new \stdClass();
         $record->userid = $user->id;
         $record->data = json_encode($params);
         $record->filename = $filename;
-        $record->filepath = $temppath;
+        $record->filepath = ''; // Legado: ya no se usa una ruta de disco.
         $record->status = 'pending';
         $record->timecreated = time();
         $record->timemodified = time();
         $queueid = $DB->insert_record('local_recibeexamen_queue', $record);
+
+        // Almacenar el PDF subido en el área de archivos de la cola.
+        try {
+            \local_recibeexamen\queue_files::store($queueid, $_FILES['pdfdata']['tmp_name'], $filename);
+        } catch (\Exception $e) {
+            // Si falla el guardado, no dejar un registro huérfano en la cola.
+            $DB->delete_records('local_recibeexamen_queue', ['id' => $queueid]);
+            throw new moodle_exception('uploadfailed', 'local_recibeexamen');
+        }
 
         // Lanzar tarea adhoc
         $task = new \local_recibeexamen\task\process_exam_task();

@@ -199,8 +199,29 @@ class process_exam_task extends \core\task\adhoc_task {
 
             $fs = get_file_storage();
             $context = \context_module::instance($cmid);
-            // Usar la ruta almacenada en la cola (por ejemplo, $entry->filepath) para crear el fichero
-            if (file_exists($entry->filepath)) {
+
+            // Recuperar el PDF subido desde el área de archivos de la cola (File API).
+            $queuedfile = \local_recibeexamen\queue_files::get($entry->id);
+
+            if ($queuedfile) {
+                $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '.pdf';
+                $file_record = [
+                    'contextid'   => $context->id,
+                    'component'   => 'assignsubmission_file',
+                    'filearea'    => 'submission_files',
+                    'itemid'      => $submission->id,
+                    'filepath'    => '/',
+                    'filename'    => $filename,
+                    'timecreated' => time(),
+                    'timemodified'=> time(),
+                    'userid'      => $user->id,
+                    'source'      => $filename,
+                    'author'      => $user->firstname . ' ' . $user->lastname,
+                    'license'     => 'unknown',
+                ];
+                $stored_file = $fs->create_file_from_storedfile($file_record, $queuedfile);
+            } else if (!empty($entry->filepath) && file_exists($entry->filepath)) {
+                // Compatibilidad con registros antiguos que aún apuntan a moodledata/temp.
                 $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '.pdf';
                 $file_record = [
                     'contextid'   => $context->id,
@@ -403,6 +424,13 @@ class process_exam_task extends \core\task\adhoc_task {
 
             // Eliminar temporal
             @unlink($pdfpath);
+
+            // Eliminar el PDF de la cola del File API: ya está copiado en la entrega.
+            \local_recibeexamen\queue_files::delete($entry->id);
+            // Compatibilidad: borrar también el temporal legado si existiera.
+            if (!empty($entry->filepath) && file_exists($entry->filepath)) {
+                @unlink($entry->filepath);
+            }
 
             // Marcar como procesado
             $entry->status = 'done';
