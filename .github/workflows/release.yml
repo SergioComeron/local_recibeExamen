@@ -28,7 +28,7 @@ jobs:
             -x "recibeexamen/.git/*" \
             -x "recibeexamen/.gitignore" \
             -x "recibeexamen/.github/*" \
-            -x "recibeexamen/hooks/*"
+            -x "recibeexamen/scripts/*"
 
       - name: Create GitHub release
         env:

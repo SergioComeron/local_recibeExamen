@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace local_recibeexamen\task;
 
 defined('MOODLE_INTERNAL') || die();
@@ -7,11 +22,21 @@ require_once($CFG->libdir . '/pdflib.php');
 require_once($CFG->dirroot . '/mod/assign/lib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 
+/**
+ * Tarea adhoc que procesa un examen recibido: crea/localiza la tarea (assign),
+ * sube el PDF como entrega y genera y envía el justificante de asistencia.
+ *
+ * @package   local_recibeexamen
+ * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class process_exam_task extends \core\task\adhoc_task {
-
+    /**
+     * Ejecuta el procesamiento del examen encolado.
+     */
     public function execute() {
         global $DB, $USER, $CFG;
-        
+
         $entry = null;
         try {
             // Obtener datos personalizados pasados en la tarea
@@ -19,19 +44,19 @@ class process_exam_task extends \core\task\adhoc_task {
             if (!isset($customdata->queueid)) {
                 throw new \moodle_exception('missingqueueid', 'local_recibeexamen');
             }
-            
+
             // Recuperar el registro de la cola
             if (!$entry = $DB->get_record('local_recibeexamen_queue', ['id' => $customdata->queueid])) {
                 throw new \moodle_exception('errormissingqueue', 'local_recibeexamen');
             }
-            
+
             // Decodificar los parámetros almacenados en el campo data
             $params = json_decode($entry->data, true);
-            
+
             // Asegurarse de obtener las variables necesarias desde $params
             $tcocodalf = $params['tcocodalf'];
             $anyanyaca = $params['anyanyaca'];
-            
+
             $dniprs    = isset($params['dniprs']) ? $params['dniprs'] : '';
             $exacodnum = isset($params['exacodnum']) ? $params['exacodnum'] : '';
             $planomid1 = isset($params['planomid1']) ? $params['planomid1'] : '';
@@ -41,14 +66,14 @@ class process_exam_task extends \core\task\adhoc_task {
             $sede        = isset($params['sede']) ? $params['sede'] : '';
 
             $cmid = 0;
-            
+
             if (!$user = $DB->get_record('user', ['username' => $params['idusuldap']])) {
                 throw new \moodle_exception('errorusernotfound', 'local_recibeexamen');
             }
-        
+
             $courseshortname = $params['anyanyaca'] . '_' . $params['asscodnum'] .
                                  '_' . $params['vaccodnum'] . '_' . $params['gaccodnum'];
-        
+
             if (!$course = $DB->get_record('course', ['shortname' => $courseshortname])) {
                 throw new \moodle_exception('errorcoursenotfound', 'local_recibeexamen');
             }
@@ -171,10 +196,10 @@ class process_exam_task extends \core\task\adhoc_task {
                 $assignid = $assign->id;
                 $cmid = $DB->get_field('course_modules', 'id', ['module' => $module->id, 'instance' => $assignid]);
             }
-        
+
             $submission = $DB->get_record('assign_submission', [
                 'assignment' => $assignid,
-                'userid'     => $user->id
+                'userid'     => $user->id,
             ]);
             if (!$submission) {
                 $submission = new \stdClass();
@@ -186,13 +211,13 @@ class process_exam_task extends \core\task\adhoc_task {
                 $submission->attemptnumber = 0;
                 $submission->groupid = 0;
                 $submission->latest = 1;
-        
+
                 $submission->id = $DB->insert_record('assign_submission', $submission);
             } else {
                 $submission->timemodified = time();
                 $DB->update_record('assign_submission', $submission);
             }
-        
+
             $coursemodule = $DB->get_record('course_modules', ['module' => $module->id, 'instance' => $assignid]);
             if (!$coursemodule) {
                 throw new \moodle_exception('errormissingcoursemodule', 'local_recibeexamen');
@@ -216,7 +241,7 @@ class process_exam_task extends \core\task\adhoc_task {
                     'filepath'    => '/',
                     'filename'    => $filename,
                     'timecreated' => time(),
-                    'timemodified'=> time(),
+                    'timemodified' => time(),
                     'userid'      => $user->id,
                     'source'      => $filename,
                     'author'      => $user->firstname . ' ' . $user->lastname,
@@ -234,7 +259,7 @@ class process_exam_task extends \core\task\adhoc_task {
                     'filepath'    => '/',
                     'filename'    => $filename,
                     'timecreated' => time(),
-                    'timemodified'=> time(),
+                    'timemodified' => time(),
                     'userid'      => $user->id,
                     'source'      => $filename,
                     'author'      => $user->firstname . ' ' . $user->lastname,
@@ -246,22 +271,22 @@ class process_exam_task extends \core\task\adhoc_task {
             if (!empty($stored_file)) {
                 $files = [];
                 $files[$stored_file->get_pathnamehash()] = $filename;
-        
+
                 $eventparams = [
                     'context'  => $context,
                     'courseid' => $course->id,
                     'objectid' => $submission->id,
                     'other'    => [
                         'content'        => '',
-                        'pathnamehashes' => array_keys($files)
+                        'pathnamehashes' => array_keys($files),
                     ],
-                    'userid'   => $user->id
+                    'userid'   => $user->id,
                 ];
-        
+
                 $event = \assignsubmission_file\event\assessable_uploaded::create($eventparams);
                 $event->set_legacy_files($files);
                 $event->trigger();
-        
+
                 $numfiles = count($fs->get_area_files(
                     $context->id,
                     'assignsubmission_file',
@@ -270,10 +295,10 @@ class process_exam_task extends \core\task\adhoc_task {
                     'sortorder ASC',
                     false
                 ));
-        
+
                 $filesubmission = $DB->get_record('assignsubmission_file', [
                     'submission' => $submission->id,
-                    'assignment' => $assign->id
+                    'assignment' => $assign->id,
                 ]);
                 if ($filesubmission) {
                     $filesubmission->numfiles = $numfiles;
@@ -328,7 +353,7 @@ class process_exam_task extends \core\task\adhoc_task {
             <div class="info">
                 <strong>Información relativa al examen:</strong><br><br>
                 <strong>Código examen:</strong> ' . $exacodnum . '<br>
-                <strong>Titulación:</strong> '. $planomid1 .'<br>
+                <strong>Titulación:</strong> ' . $planomid1 . '<br>
                 <strong>Asignatura:</strong> ' . $assnomid1 . '<br>
                 <strong>Fecha y hora de inicio:</strong> ' . $fechainicio . '<br>
                 <strong>Fecha y hora de finalización:</strong> ' . $fechafin . '<br>
@@ -351,7 +376,8 @@ class process_exam_task extends \core\task\adhoc_task {
             // Pie de página
             $pdf->Ln(40);
             $pdf->SetFont('helvetica', '', 9);
-            $pdf->MultiCell(0, 10, "Carretera de La Coruña, km 38,500 (vía de servicio, n.º 15) • 28400 Collado Villalba (Madrid) • 902 02 00 03\nwww.udima.es • informa@udima.es", 0, 'C');
+            $pdf->MultiCell(0, 10, "Carretera de La Coruña, km 38,500 (vía de servicio, n.º 15) • " .
+                "28400 Collado Villalba (Madrid) • 902 02 00 03\nwww.udima.es • informa@udima.es", 0, 'C');
 
             // Guardar PDF en temporal
             $filename = "justificante_{$user->username}.pdf";
@@ -363,25 +389,26 @@ class process_exam_task extends \core\task\adhoc_task {
             $subject = "Justificante - {$user->username}";
 
             // Preparar mensajes para texto plano y HTML.
-            $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen que se realizó en la fecha: " . $fechainicio . " en la sede: " . $sede . ".\n\nSaludos cordiales.";
+            $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de " .
+                "asistencia al examen que se realizó en la fecha: " . $fechainicio . " en la sede: " .
+                $sede . ".\n\nSaludos cordiales.";
             $message_html = nl2br($message_plain);
 
             $justificante_email = get_config('local_recibeexamen', 'justificante_email');
             $enable_studentsend = get_config('local_recibeexamen', 'enable_studentsend');
-
 
             if (empty($justificante_email)) {
                 throw new \moodle_exception('justificante_email_not_set', 'local_recibeexamen');
             }
             // Construyes el “usuario fantasma” para la copia
             $copiato = (object)[
-                'id'                => -99,          // cualquier número negativo
+                'id'                => -99, // cualquier número negativo
                 'email'             => $justificante_email, // el email del destinatario externo
-                'firstname'         => 'Copia',      // vale con un alias
+                'firstname'         => 'Copia', // vale con un alias
                 'lastname'          => 'Justificantes',
                 'username'          => 'justificante',
-                'maildisplay'       => 1,         // permite que salga el “reply-to” real
-                'mailformat'        => 1,            // 1 = HTML
+                'maildisplay'       => 1, // permite que salga el “reply-to” real
+                'mailformat'        => 1, // 1 = HTML
                 'emailstop'         => 0,
                 'firstnamephonetic' => '',
                 'lastnamephonetic'  => '',
@@ -391,19 +418,19 @@ class process_exam_task extends \core\task\adhoc_task {
 
             // 5. Envías la misma notificación al destinatario externo
             $emailcopiaresult = email_to_user(
-                    $copiato,
-                    \core_user::get_support_user(), // Aseguramos el namespace global
-                    $subject. ' -  '. $user->firstname . ' ' . $user->lastname. '- '. $params['asscodnum'],
-                    $message_plain,
-                    $message_html,
-                    $pdfpath,
-                    $filename
-                );
+                $copiato,
+                \core_user::get_support_user(), // Aseguramos el namespace global
+                $subject . ' -  ' . $user->firstname . ' ' . $user->lastname . '- ' . $params['asscodnum'],
+                $message_plain,
+                $message_html,
+                $pdfpath,
+                $filename
+            );
 
-                if (!$emailcopiaresult) {
-                    debugging('No se pudo enviar el correo al usuario fantasma', DEBUG_DEVELOPER);
-                    throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
-                }
+            if (!$emailcopiaresult) {
+                debugging('No se pudo enviar el correo al usuario fantasma', DEBUG_DEVELOPER);
+                throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
+            }
 
             if ($enable_studentsend == 1) {
                 // Enviar correo con adjunto
@@ -421,9 +448,6 @@ class process_exam_task extends \core\task\adhoc_task {
                     throw new \moodle_exception('errorcannotemail', 'local_recibeexamen');
                 }
             }
-
-
-
 
             // Eliminar temporal
             @unlink($pdfpath);
@@ -444,7 +468,7 @@ class process_exam_task extends \core\task\adhoc_task {
                 'status'       => 'success',
                 'assignid'     => $assignid,
                 'submissionid' => $submission->id,
-                'cmid'         => $cmid
+                'cmid'         => $cmid,
             ];
         } catch (\Exception $e) {
             // Si ya existe la entrada, se marca como fallida

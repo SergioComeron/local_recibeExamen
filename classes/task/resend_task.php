@@ -20,8 +20,17 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/pdflib.php');
 
+/**
+ * Tarea adhoc que regenera y reenvía el justificante de asistencia de un examen.
+ *
+ * @package   local_recibeexamen
+ * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class resend_task extends \core\task\adhoc_task {
-
+    /**
+     * Ejecuta la regeneración y reenvío del justificante.
+     */
     public function execute() {
         global $DB, $CFG;
 
@@ -77,7 +86,7 @@ class resend_task extends \core\task\adhoc_task {
             <div class="info">
                 <strong>Información relativa al examen:</strong><br><br>
                 <strong>Código examen:</strong> ' . $exacodnum . '<br>
-                <strong>Titulación:</strong> '. $planomid1 .'<br>
+                <strong>Titulación:</strong> ' . $planomid1 . '<br>
                 <strong>Asignatura:</strong> ' . $assnomid1 . '<br>
                 <strong>Fecha y hora de inicio:</strong> ' . $fechainicio . '<br>
                 <strong>Fecha y hora de finalización:</strong> ' . $fechafin . '<br>
@@ -95,7 +104,8 @@ class resend_task extends \core\task\adhoc_task {
 
             $pdf->Ln(40);
             $pdf->SetFont('helvetica', '', 9);
-            $pdf->MultiCell(0, 10, "Carretera de La Coruña, km 38,500 (vía de servicio, n.º 15) • 28400 Collado Villalba (Madrid) • 902 02 00 03\nwww.udima.es • informa@udima.es", 0, 'C');
+            $pdf->MultiCell(0, 10, "Carretera de La Coruña, km 38,500 (vía de servicio, n.º 15) • " .
+                "28400 Collado Villalba (Madrid) • 902 02 00 03\nwww.udima.es • informa@udima.es", 0, 'C');
 
             $filename = "justificante_{$user->username}.pdf";
             $tempdir = make_temp_directory('local_recibeexamen');
@@ -103,7 +113,9 @@ class resend_task extends \core\task\adhoc_task {
             $pdf->Output($pdfpath, 'F');
 
             $subject = "Justificante - {$user->username}";
-            $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de asistencia al examen que se realizó en la fecha: " . $fechainicio . " en la sede: " . $sede . ".\n\nSaludos cordiales.";
+            $message_plain = "Estimado/a {$user->firstname},\n\nAdjunto le remitimos el justificante de " .
+                "asistencia al examen que se realizó en la fecha: " . $fechainicio . " en la sede: " .
+                $sede . ".\n\nSaludos cordiales.";
             $message_html = nl2br($message_plain);
 
             $justificante_email = get_config('local_recibeexamen', 'justificante_email');
@@ -147,7 +159,6 @@ class resend_task extends \core\task\adhoc_task {
             }
 
             @unlink($pdfpath);
-
         } catch (\Exception $e) {
             debugging("Error en resend_task: " . $e->getMessage(), DEBUG_NORMAL);
         }

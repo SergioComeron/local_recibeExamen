@@ -24,6 +24,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Función de actualización del esquema de base de datos del plugin.
+ *
+ * @param int $oldversion Versión instalada actualmente.
+ * @return bool
+ */
 function xmldb_local_recibeexamen_upgrade($oldversion) {
     global $DB;
 
@@ -55,4 +61,3 @@ function xmldb_local_recibeexamen_upgrade($oldversion) {
 
     return true;
 }
-

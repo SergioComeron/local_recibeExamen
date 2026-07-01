@@ -25,14 +25,15 @@
 namespace local_recibeexamen;
 
 use local_recibeexamen\task\process_exam_task;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * @covers \local_recibeexamen\task\process_exam_task
+ * Integration tests para process_exam_task.
  */
+#[CoversClass(process_exam_task::class)]
 class process_exam_task_test extends \advanced_testcase {
-
     /** @var \stdClass Curso de prueba. */
     private $course;
 

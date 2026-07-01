@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require('../../config.php');
+require(dirname($_SERVER['SCRIPT_FILENAME'], 3) . '/config.php');
 require_once('recibeexamen_queue_table.php');
 require_once($CFG->libdir . '/tablelib.php');
 require_once($CFG->libdir . '/formslib.php');
@@ -114,7 +114,7 @@ if ($download === 'csv') {
     $out = fopen('php://output', 'w');
     // CSV header row (match visible table order)
     fputcsv($out, [
-        'ID', 'Usuario', 'Examen', 'Asignatura', 'Plan', 'Sede', 'Estado', 'Fichero', 'Fecha Inicio', 'Fecha Fin', 'Creado'
+        'ID', 'Usuario', 'Examen', 'Asignatura', 'Plan', 'Sede', 'Estado', 'Fichero', 'Fecha Inicio', 'Fecha Fin', 'Creado',
     ]);
 
     foreach ($records as $record) {
@@ -130,7 +130,7 @@ if ($download === 'csv') {
             $record->filename ?? '-',
             $data['fechainicio'] ?? '-',
             $data['fechafin'] ?? '-',
-            userdate($record->timecreated)
+            userdate($record->timecreated),
         ]);
     }
 
@@ -183,7 +183,11 @@ $today_end = strtotime('tomorrow') - 1;
 $stats['today'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ?', [$today_start, $today_end]);
 $stats['today_done'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'done']);
 $stats['today_failed'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND status = ?', [$today_start, $today_end, 'failed']);
-$stats['today_pending'] = $DB->count_records_select('local_recibeexamen_queue', 'timecreated >= ? AND timecreated <= ? AND (status = ? OR status IS NULL)', [$today_start, $today_end, '']);
+$stats['today_pending'] = $DB->count_records_select(
+    'local_recibeexamen_queue',
+    'timecreated >= ? AND timecreated <= ? AND (status = ? OR status IS NULL)',
+    [$today_start, $today_end, '']
+);
 $stats['today_unique'] = (int)$DB->get_field_sql("
     SELECT COUNT(DISTINCT data::jsonb ->> 'exacodnum')
     FROM {local_recibeexamen_queue}
@@ -207,10 +211,10 @@ $stats['last_week_unique'] = (int)$DB->get_field_sql("
 // Obtener los exámenes más frecuentes
 $frequent_exams_sql = "
     SELECT data::jsonb ->> 'exacodnum' as exam_code, COUNT(*) as count
-    FROM {local_recibeexamen_queue} 
-    WHERE data::jsonb ->> 'exacodnum' IS NOT NULL 
-    GROUP BY data::jsonb ->> 'exacodnum' 
-    ORDER BY count DESC 
+    FROM {local_recibeexamen_queue}
+    WHERE data::jsonb ->> 'exacodnum' IS NOT NULL
+    GROUP BY data::jsonb ->> 'exacodnum'
+    ORDER BY count DESC
     LIMIT 5
 ";
 $frequent_exams = $DB->get_records_sql($frequent_exams_sql);
@@ -312,7 +316,7 @@ $exportparams = [
     'searchexam' => $searchexam,
     'onlytoday'  => $onlytoday,
     'page'       => optional_param('page', 0, PARAM_INT),
-    'download'   => 'csv'
+    'download'   => 'csv',
 ];
 if ($datefrom > 0) {
     $exportparams['datefrom'] = $datefrom;
@@ -322,7 +326,7 @@ if ($dateto > 0) {
 }
 $exporturl = new moodle_url($PAGE->url, $exportparams);
 echo html_writer::link($exporturl, get_string('exportcsv', 'local_recibeexamen', null) ?: 'Exportar CSV', [
-    'class' => 'btn btn-primary mb-3'
+    'class' => 'btn btn-primary mb-3',
 ]);
 
 // Crear instancia de la tabla.
@@ -330,7 +334,7 @@ $table = new mod_recibeexamen_queue_table('recibeexamen_queue_table');
 $baseurlparams = [
     'searchuser' => $searchuser,
     'searchexam' => $searchexam,
-    'onlytoday'  => $onlytoday
+    'onlytoday'  => $onlytoday,
 ];
 if ($datefrom > 0) {
     $baseurlparams['datefrom'] = $datefrom;
@@ -416,7 +420,7 @@ foreach ($records as $record) {
         $acciones = html_writer::tag('button', 'Enviar', [
             'class' => 'btn btn-secondary btn-sm',
             'disabled' => 'disabled',
-            'title' => get_string('nopermissions', 'error')
+            'title' => get_string('nopermissions', 'error'),
         ]);
     }
 
@@ -425,7 +429,7 @@ foreach ($records as $record) {
     $data_button = '<button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#dataModal' . $record->id . '">
         <i class="fa fa-eye"></i> Ver datos
     </button>';
-    
+
     // Modal para mostrar los datos
     $modal = '
     <div class="modal fade" id="dataModal' . $record->id . '" tabindex="-1" role="dialog" aria-labelledby="dataModalLabel' . $record->id . '">
@@ -438,7 +442,7 @@ foreach ($records as $record) {
                     </button>
                 </div>
                 <div class="modal-body">
-                    <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">' . 
+                    <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">' .
                     htmlspecialchars($data_formatted) . '</pre>
                 </div>
                 <div class="modal-footer">
@@ -462,8 +466,10 @@ foreach ($records as $record) {
 
     // Crear enlace a la asignatura si existen los campos necesarios.
     $asignaturalink = $data['assnomid1'] ?? '-';
-    if (!empty($data['anyanyaca']) && !empty($data['asscodnum']) &&
-        !empty($data['vaccodnum']) && !empty($data['gaccodnum'])) {
+    if (
+        !empty($data['anyanyaca']) && !empty($data['asscodnum']) &&
+        !empty($data['vaccodnum']) && !empty($data['gaccodnum'])
+    ) {
         $courseshortname = $data['anyanyaca'] . '_' . $data['asscodnum'] .
                           '_' . $data['vaccodnum'] . '_' . $data['gaccodnum'];
         $course = $DB->get_record('course', ['shortname' => $courseshortname], 'id');

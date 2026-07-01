@@ -31,7 +31,11 @@ require_once($CFG->libdir . '/tablelib.php');
  * Tabla para listar registros de local_recibeexamen_queue.
  */
 class mod_recibeexamen_queue_table extends flexible_table {
-
+    /**
+     * Constructor: define columnas y cabeceras de la tabla.
+     *
+     * @param string $uniqueid Identificador único de la tabla.
+     */
     public function __construct($uniqueid) {
         parent::__construct($uniqueid);
 
@@ -73,58 +77,60 @@ class mod_recibeexamen_queue_table extends flexible_table {
         $this->pageable(true);
     }
 
+    /**
+     * Devuelve el contenido de la columna de acciones (reenviar).
+     *
+     * @param object $row Fila de la tabla.
+     * @return string HTML del enlace de acción.
+     */
     public function col_acciones($row) {
-       $url = new moodle_url('/local/recibeexamen/resend.php', ['id' => $row->id]);
+        $url = new moodle_url('/local/recibeexamen/resend.php', ['id' => $row->id]);
         return html_writer::link($url, '🔁 Reenviar', ['class' => 'btn btn-secondary']);
     }
 
 
-    /**
-     * Convierte cada fila en columnas visibles.
-     */
+    // Convierte cada fila en columnas visibles.
     // public function col_idusuldap($row) {
-    //     return $this->get_data_field($row, 'idusuldap');
+    // return $this->get_data_field($row, 'idusuldap');
     // }
 
     // public function col_exacodnum($row) {
-    //     return $this->get_data_field($row, 'exacodnum');
+    // return $this->get_data_field($row, 'exacodnum');
     // }
 
     // public function col_assnomid1($row) {
-    //     return $this->get_data_field($row, 'assnomid1');
+    // return $this->get_data_field($row, 'assnomid1');
     // }
 
     // public function col_planomid1($row) {
-    //     return $this->get_data_field($row, 'planomid1');
+    // return $this->get_data_field($row, 'planomid1');
     // }
 
     // public function col_fechainicio($row) {
-    //     $value = $this->get_data_field($row, 'fechainicio');
-    //     return $value ? $value : '-';
+    // $value = $this->get_data_field($row, 'fechainicio');
+    // return $value ? $value : '-';
     // }
 
     // public function col_fechafin($row) {
-    //     $value = $this->get_data_field($row, 'fechafin');
-    //     return $value ? $value : '-';
+    // $value = $this->get_data_field($row, 'fechafin');
+    // return $value ? $value : '-';
     // }
 
     // public function col_filename($row) {
-    //     return property_exists($row, 'filename') ? $row->filename : '-';
+    // return property_exists($row, 'filename') ? $row->filename : '-';
     // }
 
     // public function col_timecreated($row) {
-    //     return 'fecha'.userdate($row->timecreated);
+    // return 'fecha'.userdate($row->timecreated);
     // }
 
-    /**
-     * Extrae un campo del JSON `data`.
-     */
+    // Extrae un campo del JSON `data`.
     // protected function get_data_field($row, $fieldname) {
-    //     if (!property_exists($row, 'data')) {
-    //         return '-';
-    //     }
+    // if (!property_exists($row, 'data')) {
+    // return '-';
+    // }
 
-    //     $data = json_decode($row->data, true);
-    //     return isset($data[$fieldname]) ? s($data[$fieldname]) : '-';
+    // $data = json_decode($row->data, true);
+    // return isset($data[$fieldname]) ? s($data[$fieldname]) : '-';
     // }
 }

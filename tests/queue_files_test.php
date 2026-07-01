@@ -24,13 +24,15 @@
 
 namespace local_recibeexamen;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * @covers \local_recibeexamen\queue_files
+ * PHPUnit tests para queue_files.
  */
+#[CoversClass(queue_files::class)]
 class queue_files_test extends \advanced_testcase {
-
     /**
      * Crea un PDF de prueba en disco y devuelve su ruta.
      *

@@ -1,0 +1,12 @@
+{
+    "name": "sergiocomeron/moodle-local_recibeexamen",
+    "description": "Moodle local_recibeexamen plugin - dev dependencies",
+    "require-dev": {
+        "moodlehq/moodle-cs": "*"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

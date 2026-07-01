@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/externallib.php");
@@ -6,8 +21,19 @@ require_once("$CFG->dirroot/mod/assign/lib.php");
 require_once("$CFG->dirroot/course/lib.php");
 require_once($CFG->libdir . '/pdflib.php'); // Incluir la biblioteca TCPDF
 
+/**
+ * Servicios web externos del plugin local_recibeexamen.
+ *
+ * @package   local_recibeexamen
+ * @copyright 2025, Sergio Comerón <info@sergiocomeron.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_recibeexamen_external extends external_api {
-
+    /**
+     * Define los parámetros de entrada del webservice receive_exam.
+     *
+     * @return external_function_parameters
+     */
     public static function receive_exam_parameters() {
         return new external_function_parameters(
             [
@@ -24,13 +50,43 @@ class local_recibeexamen_external extends external_api {
                 'sede' => new external_value(PARAM_RAW, 'Sede del examen'),
                 'exacodnum' => new external_value(PARAM_INT, 'ID del examen'),
                 'dniprs' => new external_value(PARAM_RAW, 'DNI del estudiante'),
-                'exacodnum' => new external_value(PARAM_INT, 'ID del examen'),
             ]
         );
     }
 
-    public static function receive_exam($idusuldap, $asscodnum, $vaccodnum, $gaccodnum, $anyanyaca, $tcocodalf, $planomid1,
-    $assnomid1, $fechainicio, $fechafin, $sede, $exacodnum, $dniprs) {
+    /**
+     * Recibe un examen escaneado, lo encola y lanza la tarea de procesamiento.
+     *
+     * @param string $idusuldap Nombre de usuario del estudiante.
+     * @param int $asscodnum Código de asignatura.
+     * @param int $vaccodnum Código de vinculación académica.
+     * @param int $gaccodnum Código de grupo académico.
+     * @param string $anyanyaca Curso académico.
+     * @param string $tcocodalf Convocatoria.
+     * @param string $planomid1 Plan de estudios.
+     * @param string $assnomid1 Nombre de la asignatura.
+     * @param string $fechainicio Fecha de inicio del examen (ISO 8601).
+     * @param string $fechafin Fecha de fin del examen (ISO 8601).
+     * @param string $sede Sede del examen.
+     * @param int $exacodnum Código del examen.
+     * @param string $dniprs DNI del estudiante.
+     * @return array Estado de la operación y id en cola.
+     */
+    public static function receive_exam(
+        $idusuldap,
+        $asscodnum,
+        $vaccodnum,
+        $gaccodnum,
+        $anyanyaca,
+        $tcocodalf,
+        $planomid1,
+        $assnomid1,
+        $fechainicio,
+        $fechafin,
+        $sede,
+        $exacodnum,
+        $dniprs
+    ) {
         global $DB, $CFG;
 
         $params = self::validate_parameters(self::receive_exam_parameters(), [
@@ -102,6 +158,11 @@ class local_recibeexamen_external extends external_api {
         ];
     }
 
+    /**
+     * Define la estructura de retorno del webservice receive_exam.
+     *
+     * @return external_single_structure
+     */
     public static function receive_exam_returns() {
         return new external_single_structure(
             [

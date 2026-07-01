@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ruleset name="local_recibeexamen">
+    <description>Coding standard for local_recibeexamen. Based on Moodle CS with targeted exclusions.</description>
+
+    <file>.</file>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="warning-severity" value="0"/>
+
+    <rule ref="moodle"/>
+
+    <!--
+        Variable naming: este plugin usa snake_case de forma intencional
+        (today_start, assign_data, meta_courses, message_plain…). Renombrar
+        docenas de variables sería arriesgado y no aporta valor.
+    -->
+    <rule ref="moodle.NamingConventions.ValidVariableName.VariableNameUnderscore">
+        <severity>0</severity>
+    </rule>
+    <rule ref="moodle.NamingConventions.ValidVariableName.VariableNameLowerCase">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        delete.php, listado.php y resend.php son endpoints standalone invocados
+        directamente por HTTP. Arrancan Moodle con require(... '/config.php') en vez
+        de defined('MOODLE_INTERNAL'), que es el patrón correcto para estos scripts.
+    -->
+    <rule ref="moodle.Files.MoodleInternal.MoodleInternalGlobalState">
+        <exclude-pattern>*/delete.php</exclude-pattern>
+        <exclude-pattern>*/listado.php</exclude-pattern>
+        <exclude-pattern>*/resend.php</exclude-pattern>
+    </rule>
+</ruleset>

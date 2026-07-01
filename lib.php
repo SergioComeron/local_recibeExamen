@@ -24,13 +24,26 @@
 
  defined('MOODLE_INTERNAL') || die();
 
- function local_recibeexamen_mod_quiz_mod_form($formwrapper, MoodleQuickForm $mform) {
-     $mform->addElement('advcheckbox', 'sendreceipt', get_string('sendreceipt', 'local_recibeexamen'));
-     $mform->addHelpButton('sendreceipt', 'sendreceipt', 'local_recibeexamen');
-     $mform->setDefault('sendreceipt', 0);
- }
+/**
+ * Añade al formulario de quiz la casilla para enviar justificante de examen.
+ *
+ * @param mixed $formwrapper Envoltorio del formulario del módulo.
+ * @param MoodleQuickForm $mform Formulario del módulo quiz.
+ */
+function local_recibeexamen_mod_quiz_mod_form($formwrapper, MoodleQuickForm $mform) {
+    $mform->addElement('advcheckbox', 'sendreceipt', get_string('sendreceipt', 'local_recibeexamen'));
+    $mform->addHelpButton('sendreceipt', 'sendreceipt', 'local_recibeexamen');
+    $mform->setDefault('sendreceipt', 0);
+}
 
- function local_recibeexamen_mod_quiz_after_save($formwrapper, stdClass $data, stdClass $course) {
+/**
+ * Guarda la preferencia de envío de justificante tras guardar el quiz.
+ *
+ * @param mixed $formwrapper Envoltorio del formulario del módulo.
+ * @param stdClass $data Datos enviados por el formulario.
+ * @param stdClass $course Curso al que pertenece el quiz.
+ */
+function local_recibeexamen_mod_quiz_after_save($formwrapper, stdClass $data, stdClass $course) {
     global $DB;
 
     // Guardamos en una tabla propia si la casilla está marcada.

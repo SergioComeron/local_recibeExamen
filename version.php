@@ -29,4 +29,3 @@ $plugin->requires = 2014051206;
 $plugin->component = 'local_recibeexamen';
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '1.0.0';
-
