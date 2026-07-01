@@ -232,7 +232,10 @@ class process_exam_task extends \core\task\adhoc_task {
             $queuedfile = \local_recibeexamen\queue_files::get($entry->id);
 
             if ($queuedfile) {
-                $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '.pdf';
+                // El queueid garantiza unicidad entre recepciones; el timestamp por sí
+                // solo (resolución de 1 s) colisiona si llegan dos exámenes del mismo
+                // usuario en el mismo segundo.
+                $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '-q' . $entry->id . '.pdf';
                 $file_record = [
                     'contextid'   => $context->id,
                     'component'   => 'assignsubmission_file',
@@ -250,7 +253,7 @@ class process_exam_task extends \core\task\adhoc_task {
                 $stored_file = $fs->create_file_from_storedfile($file_record, $queuedfile);
             } else if (!empty($entry->filepath) && file_exists($entry->filepath)) {
                 // Compatibilidad con registros antiguos que aún apuntan a moodledata/temp.
-                $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '.pdf';
+                $filename = 'ex_' . $course->id . '-u-' .  $user->id . 't' . time() . '-q' . $entry->id . '.pdf';
                 $file_record = [
                     'contextid'   => $context->id,
                     'component'   => 'assignsubmission_file',
